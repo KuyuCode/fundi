@@ -26,6 +26,9 @@ dev = [
     "pytest-asyncio>=0.26.0",
     { include-group = "docs" },
 ]
+fastapi = [
+    "fastapi>=0.116.1",
+]
 
 [tool.pytest.ini_options]
 addopts = [
@@ -44,6 +47,7 @@ filterwarnings = [
 reportAny = false
 reportUnusedCallResult = false
 reportCallInDefaultInitializer = false
+reportImplicitStringConcatenation = false
 exclude = [".venv"]
 ignore = ["tests"]
 
