@@ -10,14 +10,13 @@ from starlette.background import BackgroundTasks
 from fastapi.exceptions import RequestValidationError
 from fastapi.dependencies.utils import solve_dependencies
 
-from fundi.types import CallableInfo
 from fundi.inject import injection_impl
 from fundi.util import call_async, call_sync
+from fundi.types import CacheKey, CallableInfo
 
-from .alias import resolve_aliases
 from .metadata import get_metadata
 from .types import DependencyOverridesProvider
-from .constants import METADATA_ALIASES, METADATA_DEPENDANT, METADATA_SCOPE_EXTRA
+from .constants import METADATA_DEPENDANT, METADATA_SCOPE_EXTRA, METADATA_SECURITY_SCOPES
 
 
 async def inject(
@@ -29,9 +28,7 @@ async def inject(
     embed_body_fields: bool,
     background_tasks: BackgroundTasks,
     response: Response,
-    cache: (
-        collections.abc.MutableMapping[typing.Callable[..., typing.Any], typing.Any] | None
-    ) = None,
+    cache: collections.abc.MutableMapping[CacheKey, typing.Any] | None = None,
     override: collections.abc.Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> typing.Any:
     """
@@ -63,15 +60,7 @@ async def inject(
     if fastapi_params.errors:
         raise RequestValidationError(_normalize_errors(fastapi_params.errors), body=body)
 
-    scope = {
-        **fastapi_params.values,
-        **resolve_aliases(
-            metadata[METADATA_ALIASES],
-            request,
-            background_tasks,
-            response,
-        ),
-    }
+    scope = fastapi_params.values
 
     scope_extra: collections.abc.Mapping[str, typing.Any] = metadata.get(METADATA_SCOPE_EXTRA, {})
 

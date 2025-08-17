@@ -1,12 +1,28 @@
 import typing
 from collections.abc import Sequence
 
-from fastapi.security.oauth2 import SecurityScopes
-
-from fundi.scan import scan
-from .metadata import get_metadata
+from fundi import scan
 from fundi.types import CallableInfo
+
 from .constants import METADATA_SECURITY_SCOPES
+
+__all__ = ["secured"]
+
+
+def secured_scan(
+    dependency: typing.Callable[..., typing.Any], scopes: Sequence[str], caching: bool = True
+) -> CallableInfo[typing.Any]:
+    """
+    Scan dependency and setup it's security scopes
+    """
+    from .metadata import get_metadata
+
+    info = scan(dependency, caching=caching)
+
+    metadata = get_metadata(info)
+    metadata.update({METADATA_SECURITY_SCOPES: list(scopes)})
+
+    return info
 
 
 def secured(
@@ -20,7 +36,4 @@ def secured(
     :return: callable information
     """
 
-    info = scan(dependency, caching=caching)
-    metadata = get_metadata(info)
-    metadata.update({METADATA_SECURITY_SCOPES: SecurityScopes(list(scopes))})
-    return info
+    return secured_scan(dependency, scopes, caching)

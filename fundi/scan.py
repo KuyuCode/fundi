@@ -1,7 +1,8 @@
-from dataclasses import replace
-from types import FunctionType
 import typing
 import inspect
+from copy import deepcopy
+from types import FunctionType
+from dataclasses import replace
 
 from fundi.util import is_configured, get_configuration
 from fundi.types import R, CallableInfo, Parameter, TypeResolver
@@ -63,7 +64,7 @@ def scan(call: typing.Callable[..., R], caching: bool = True) -> CallableInfo[R]
     """
 
     if hasattr(call, "__fundi_info__"):
-        info = typing.cast(CallableInfo[typing.Any], getattr(call, "__fundi_info__"))
+        info = typing.cast(CallableInfo[typing.Any], deepcopy(getattr(call, "__fundi_info__")))
         return replace(info, use_cache=caching)
 
     if isinstance(call, (FunctionType, type)):

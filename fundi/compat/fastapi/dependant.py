@@ -3,14 +3,19 @@ import typing
 from fastapi import params
 from fastapi._compat import ModelField
 from fastapi.security.base import SecurityBase
-from fastapi.security.oauth2 import SecurityScopes
 from fastapi.dependencies.models import Dependant, SecurityRequirement
-from fastapi.dependencies.utils import add_param_to_fields, analyze_param
 
+from fundi.util import callable_str
 from fundi.types import CallableInfo
 
-from .metadata import get_metadata
-from .constants import ALIAS_ALLOWED_CLASSES, METADATA_DEPENDANT, METADATA_SECURITY_SCOPES
+from .metadata import build_metadata, get_metadata
+from .constants import METADATA_DEPENDANT, METADATA_SECURITY_SCOPES
+
+from fastapi.dependencies.utils import (
+    analyze_param,
+    add_param_to_fields,
+    add_non_field_param_to_dependency,
+)
 
 MF = typing.TypeVar("MF", bound=ModelField)
 
@@ -36,44 +41,40 @@ def update_dependant(source: Dependant, target: Dependant):
         if target.security_scopes is None:
             target.security_scopes = []
 
-        target.security_scopes.extend(source.security_scopes)
+        target.security_scopes[::] = set().union(target.security_scopes, source.security_scopes)
 
 
 def get_scope_dependant(
     ci: CallableInfo[typing.Any],
     path_param_names: set[str],
     path: str,
-    security_scopes: list[str] | None = None,
 ) -> Dependant:
-    if security_scopes is None:
-        security_scopes = []
+    build_metadata(ci)
 
     dependant = Dependant(path=path)
-    get_metadata(ci).update({METADATA_DEPENDANT: dependant})
+    dependant_metadata = get_metadata(ci)
+    dependant.security_scopes = dependant_metadata[METADATA_SECURITY_SCOPES]
 
-    flat_dependant = Dependant(path=path, security_scopes=security_scopes)
+    dependant_metadata.update({METADATA_DEPENDANT: dependant})
+
+    flat_dependant = Dependant(
+        path=path, security_scopes=dependant_metadata[METADATA_SECURITY_SCOPES]
+    )
 
     for param in ci.parameters:
         if param.from_ is not None:
             subci = param.from_
 
-            sub = get_scope_dependant(subci, path_param_names, path, security_scopes)
+            sub = get_scope_dependant(subci, path_param_names, path)
             update_dependant(sub, flat_dependant)
 
             # This is required to pass security_scopes to dependency.
             # Here parameter name and security scopes itself are set.
             metadata = get_metadata(subci)
 
-            param_scopes: SecurityScopes | None = metadata.get(METADATA_SECURITY_SCOPES, None)
-
-            if param_scopes:
-                security_scopes.extend(param_scopes.scopes)
-
             if isinstance(subci.call, SecurityBase):
                 flat_dependant.security_requirements.append(
-                    SecurityRequirement(
-                        subci.call, security_scopes if param_scopes is None else param_scopes.scopes
-                    )
+                    SecurityRequirement(subci.call, metadata[METADATA_SECURITY_SCOPES])
                 )
 
             continue
@@ -85,11 +86,13 @@ def get_scope_dependant(
             is_path_param=param.name in path_param_names,
         )
 
-        if details.type_annotation is SecurityScopes:
-            dependant.security_scopes_param_name = param.name
-            continue
+        if add_non_field_param_to_dependency(
+            param_name=param.name, type_annotation=param.annotation, dependant=dependant
+        ):
+            assert (
+                details.field is None
+            ), f'Non-field parameter shouldn\'t have field: error caused by analysis of the parameter "{param.name}" in {callable_str(ci.call)}'
 
-        if details.type_annotation in ALIAS_ALLOWED_CLASSES:
             continue
 
         assert details.field is not None

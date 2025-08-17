@@ -24,11 +24,11 @@ from fastapi.dependencies.utils import (
 )
 
 from fundi import scan
-from .alias import init_aliases
+from fundi.util import callable_str
 from fundi.types import CallableInfo
+from fundi.compat.fastapi import secured
 from .handler import get_request_handler
 from .dependant import get_scope_dependant, update_dependant
-from fundi.compat.fastapi.metadata import build_metadata
 
 
 @typing.final
@@ -76,11 +76,25 @@ class FunDIRoute(APIRoute):
         self.dependencies: list[CallableInfo[typing.Any]] = []
 
         for dependency in dependencies or []:
-            if isinstance(dependency, params.Depends):
-                if dependency.dependency is None:
-                    continue
+            if isinstance(dependency, params.Security):
+                security = dependency
+                assert (
+                    security.dependency is not None
+                ), f"Dependency defined in endpoint {callable_str(endpoint)} doesn't have callable"
 
-                self.dependencies.append(scan(dependency.dependency))
+                self.dependencies.append(
+                    secured(security.dependency, security.scopes, security.use_cache)
+                )
+                continue
+
+            if isinstance(dependency, params.Depends):
+                depends = dependency
+
+                assert (
+                    depends.dependency is not None
+                ), f"Dependency defined in endpoint {callable_str(endpoint)} doesn't have callable"
+
+                self.dependencies.append(scan(depends.dependency, depends.use_cache))
                 continue
 
             if isinstance(dependency, CallableInfo):
@@ -172,15 +186,10 @@ class FunDIRoute(APIRoute):
 
         self.response_fields = response_fields
 
-        build_metadata(callable_info)
-        init_aliases(callable_info)
-
         path_param_names = get_path_param_names(self.path_format)
         self.dependant = get_scope_dependant(callable_info, path_param_names, self.path_format)
 
         for ci in self.dependencies:
-            build_metadata(ci)
-            init_aliases(ci)
             update_dependant(
                 get_scope_dependant(ci, path_param_names, self.path_format), self.dependant
             )
