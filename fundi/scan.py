@@ -1,6 +1,8 @@
-from dataclasses import replace
 import typing
 import inspect
+from dataclasses import replace
+from types import BuiltinFunctionType, FunctionType, MethodType
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 
 from fundi.util import is_configured, get_configuration
 from fundi.types import R, CallableInfo, Parameter, TypeResolver
@@ -51,6 +53,20 @@ def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
     )
 
 
+def _is_context(call: typing.Any):
+    if isinstance(call, type):
+        return issubclass(call, AbstractContextManager)
+    else:
+        return isinstance(call, AbstractContextManager)
+
+
+def _is_async_context(call: typing.Any):
+    if isinstance(call, type):
+        return issubclass(call, AbstractAsyncContextManager)
+    else:
+        return isinstance(call, AbstractAsyncContextManager)
+
+
 def scan(call: typing.Callable[..., R], caching: bool = True) -> CallableInfo[R]:
     """
     Get callable information
@@ -65,32 +81,38 @@ def scan(call: typing.Callable[..., R], caching: bool = True) -> CallableInfo[R]
         info = typing.cast(CallableInfo[typing.Any], getattr(call, "__fundi_info__"))
         return replace(info, use_cache=caching)
 
-    signature = inspect.signature(call)
+    if not callable(call):
+        raise ValueError(
+            f"Callable expected, got {type(call)!r}"
+        )  # pyright: ignore[reportUnreachable]
 
-    generator = inspect.isgeneratorfunction(call)
-    async_generator = inspect.isasyncgenfunction(call)
+    truecall = call.__call__
+    if isinstance(call, (FunctionType, BuiltinFunctionType, MethodType, type)):
+        truecall = call
 
-    context = hasattr(call, "__enter__") and hasattr(call, "__exit__")
-    async_context = hasattr(call, "__aenter__") and hasattr(call, "__aexit__")
+    signature = inspect.signature(truecall)
 
-    async_ = inspect.iscoroutinefunction(call) or async_generator or async_context
+    generator = inspect.isgeneratorfunction(truecall)
+    async_generator = inspect.isasyncgenfunction(truecall)
+
+    context = _is_context(call)
+    async_context = _is_async_context(call)
+
+    async_ = inspect.iscoroutinefunction(truecall) or async_generator or async_context
     generator = generator or async_generator
     context = context or async_context
 
     parameters = [_transform_parameter(parameter) for parameter in signature.parameters.values()]
 
-    info = typing.cast(
-        CallableInfo[R],
-        CallableInfo(
-            call=call,
-            use_cache=caching,
-            async_=async_,
-            context=context,
-            generator=generator,
-            parameters=parameters,
-            return_annotation=signature.return_annotation,
-            configuration=get_configuration(call) if is_configured(call) else None,
-        ),
+    info = CallableInfo(
+        call=call,
+        use_cache=caching,
+        async_=async_,
+        context=context,
+        generator=generator,
+        parameters=parameters,
+        return_annotation=signature.return_annotation,
+        configuration=get_configuration(call) if is_configured(call) else None,
     )
 
     try:
