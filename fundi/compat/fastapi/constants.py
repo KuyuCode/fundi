@@ -1,0 +1,5 @@
+__all__ = ["METADATA_SECURITY_SCOPES", "METADATA_DEPENDANT", "METADATA_SCOPE_EXTRA"]
+
+METADATA_SECURITY_SCOPES = "fastapi_security_scopes"
+METADATA_DEPENDANT = "fastapi_dependant"
+METADATA_SCOPE_EXTRA = "scope_extra"
