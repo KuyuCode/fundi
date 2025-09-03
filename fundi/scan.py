@@ -79,7 +79,7 @@ def scan(call: typing.Callable[..., R], caching: bool = True) -> CallableInfo[R]
 
     if hasattr(call, "__fundi_info__"):
         info = typing.cast(CallableInfo[typing.Any], getattr(call, "__fundi_info__"))
-        return replace(info, use_cache=caching)
+        return _copy_info(info, use_cache=caching)
 
     if not callable(call):
         raise ValueError(
@@ -121,3 +121,14 @@ def scan(call: typing.Callable[..., R], caching: bool = True) -> CallableInfo[R]
         pass
 
     return info
+
+
+def _copy_info(info: CallableInfo[R], **update: typing.Any) -> CallableInfo[R]:
+    return replace(
+        info,
+        **{
+            "parameters": list(map(replace, info.parameters)),
+            "configuration": info.configuration and replace(info.configuration),
+            **update,
+        },
+    )
