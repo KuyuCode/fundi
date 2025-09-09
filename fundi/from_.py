@@ -6,7 +6,12 @@ from fundi.types import CallableInfo, TypeResolver
 
 
 def from_(
-    dependency: type | typing.Callable[..., typing.Any], caching: bool = True
+    dependency: type | typing.Callable[..., typing.Any],
+    caching: bool = True,
+    async_: bool | None = None,
+    generator: bool | None = None,
+    context: bool | None = None,
+    use_return_annotation: bool = True,
 ) -> TypeResolver | CallableInfo[typing.Any]:
     """
     Use callable or type as dependency for parameter of function
@@ -24,4 +29,11 @@ def from_(
     ):
         return TypeResolver(dependency)
 
-    return scan(dependency, caching=caching)
+    return scan(
+        dependency,
+        caching=caching,
+        async_=async_,
+        generator=generator,
+        context=context,
+        use_return_annotation=use_return_annotation,
+    )

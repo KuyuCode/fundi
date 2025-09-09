@@ -90,7 +90,18 @@ def scan(
 
     if hasattr(call, "__fundi_info__"):
         info = typing.cast(CallableInfo[typing.Any], getattr(call, "__fundi_info__"))
-        return replace(info, use_cache=caching)
+
+        overrides = {"use_cache": caching}
+        if async_ is not None:
+            overrides["async_"] = async_
+
+        if generator is not None:
+            overrides["generator"] = generator
+
+        if context is not None:
+            overrides["context"] = context
+
+        return replace(info, **overrides)
 
     if not callable(call):
         raise ValueError(
