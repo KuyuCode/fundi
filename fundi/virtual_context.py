@@ -109,8 +109,9 @@ class VirtualContextProvider(typing.Generic[T, P]):
     """
 
     def __init__(self, function: typing.Callable[P, Generator[T, None, None]]):
-        info = replace(scan(function), generator=False, context=True, call=self)
-        self.__fundi_info__: CallableInfo[typing.Any] = info
+        self.__fundi_info__: CallableInfo[typing.Any] = replace(
+            scan(function, generator=False, context=True), call=self
+        )
 
         self.__wrapped__: typing.Callable[P, Generator[T, None, None]] = function
 
@@ -124,8 +125,9 @@ class AsyncVirtualContextProvider(typing.Generic[T, P]):
     """
 
     def __init__(self, function: typing.Callable[P, AsyncGenerator[T]]):
-        info = replace(scan(function), generator=False, context=True, call=self)
-        self.__fundi_info__: CallableInfo[typing.Any] = info
+        self.__fundi_info__: CallableInfo[typing.Any] = replace(
+            scan(function, generator=False, context=True), call=self
+        )
 
         self.__wrapped__: typing.Callable[P, AsyncGenerator[T]] = function
 
