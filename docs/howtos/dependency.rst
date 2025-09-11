@@ -2,6 +2,7 @@
 Dependency
 **********
 
+
 Dependencies in FunDI are simple asynchronous/synchronous functions.
 That are used to create and provide data to dependants.
 They help split code into preparation and actual work.
@@ -21,6 +22,7 @@ Example of dependency that generates one random name:
         return random.choice(
             ("Bob", "Steve", "Petro", "Yevhen", "Stepan", "Vitaliy", "Volodymyr", "Tom", "Jack", "Jerry")
         )
+
 
 ..
 

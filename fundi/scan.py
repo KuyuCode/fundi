@@ -84,6 +84,8 @@ def scan(
     :param async_: Override "async_" attriubute value
     :param generator: Override "generator" attriubute value
     :param context: Override "context" attriubute value
+    :param use_return_annotation: Whether to use call's return
+        annotation to define it's type
 
     :return: callable information
     """

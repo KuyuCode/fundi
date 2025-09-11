@@ -23,6 +23,18 @@ Example of dependant that use dependency to get current user:
 
     def application(user: User = from_(require_user)):
         print(f"Current user is {user}")
+..
+
+  In some cases, you may need to manually specify whether dependency is asynchronous,
+  generator or context manager.
+  To do so - ``from_()`` provides parameters to override default scanning 
+  behavior ``from_(call, *, async_: bool, generator: bool, context: bool)``
+  
+  **Note** that ``async_`` may be used in combination with generator or context
+  
+  **Also**, FunDI will try to define this properties using function 
+  return type-hint if defined. To disable this behavior use
+  ``use_return_annotation=False`` parameter
 
 You may want to wrap several dependencies together
 (e.g., name + ID = username) to pass them as a single unit:
