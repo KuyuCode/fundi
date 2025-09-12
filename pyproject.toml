@@ -5,9 +5,11 @@ description = "Dependency injection library"
 requires-python = ">=3.10"
 readme = "README.md"
 authors = [{email="mail.kuyugama@gmail.com", name="Kuyugama"}]
-dependencies = []
 license-files = ["LICENSE", "LICENSE.md"]
 classifiers = ["Programming Language :: Python :: 3"]
+dependencies = [
+  "typing-extensions>=4.13.0",
+]
 
 [project.urls]
 homepage = "https://github.com/KuyuCode/fundi"
