@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "FunDI"
 copyright = "2025, Kuyugama"
 author = "Kuyugama"
-release = "1.3.0"
+release = "1.3.1"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
