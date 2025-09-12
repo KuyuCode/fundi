@@ -359,3 +359,13 @@ def test_scan_infer_generator():
     info = scan(dep)
 
     assert info.async_ is True
+
+
+def test_scan_with_None_typehint():
+    def dep() -> None: ...
+
+    info = scan(dep)
+
+    assert info.async_ is False
+    assert info.generator is False
+    assert info.context is False

@@ -235,7 +235,7 @@ def get_configuration(call: typing.Callable[..., typing.Any]) -> DependencyConfi
     return configuration
 
 
-def normalize_annotation(annotation: typing.Any) -> tuple[type[typing.Any], ...]:
+def normalize_annotation(annotation: typing.Any) -> tuple[typing.Any, ...]:
     """
     Normalize type annotation to make it easily work with
     """
