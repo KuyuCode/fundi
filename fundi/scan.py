@@ -116,9 +116,14 @@ def scan(
 
     signature = inspect.signature(truecall)
 
-    return_ = type
+    return_: type[typing.Any] = type
     if signature.return_annotation is not signature.empty:
-        return_ = normalize_annotation(signature.return_annotation)[0]
+        annotation = normalize_annotation(signature.return_annotation)[0]
+
+        if not isinstance(annotation, type):
+            return_ = type(return_)
+        else:
+            return_ = annotation
 
     # WARNING: over-engineered logic!! :3
 
