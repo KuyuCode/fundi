@@ -268,3 +268,94 @@ def test_scan_varkw():
     info = scan(dep)
 
     assert info.parameters == [Parameter("kwargs", int, None, keyword_varying=True)]
+
+
+def test_scan_override_context():
+    import contextlib
+
+    @contextlib.contextmanager
+    def dep():
+        yield None
+
+    info = scan(dep, context=True)
+
+    assert info.context is True
+
+
+def test_scan_override_async():
+    import asyncio
+
+    def dep():
+        return asyncio.Future()
+
+    info = scan(dep, async_=True)
+
+    assert info.async_ is True
+
+
+def test_scan_override_generator():
+    def generator():
+        yield 1
+
+    def dep():
+        return generator()
+
+    info = scan(dep, generator=True)
+
+    assert info.generator is True
+
+
+def test_scan_infer_context():
+    import contextlib
+
+    def dep() -> contextlib.AbstractContextManager: ...
+
+    info = scan(dep)
+
+    assert info.context is True
+
+    def dep() -> contextlib.AbstractAsyncContextManager: ...
+
+    info = scan(dep)
+
+    assert info.context is True
+
+
+def test_scan_infer_generator():
+    import collections.abc as C
+
+    def dep() -> C.Generator: ...
+
+    info = scan(dep)
+
+    assert info.generator is True
+
+    def dep() -> C.AsyncGenerator: ...
+
+    info = scan(dep)
+
+    assert info.generator is True
+
+
+def test_scan_infer_generator():
+    import asyncio
+    import contextlib
+    import collections.abc as C
+
+    def dep() -> asyncio.Future: ...
+
+    info = scan(dep)
+
+    assert info.async_ is True
+
+    def dep() -> contextlib.AbstractAsyncContextManager: ...
+
+    info = scan(dep)
+
+    assert info.async_ is True
+
+    def dep() -> C.AsyncGenerator: ...
+
+    info = scan(dep)
+
+    assert info.async_ is True

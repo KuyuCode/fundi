@@ -126,3 +126,56 @@ Composite dependencies - special kind of configurable dependency that accepts ot
 dependencies as parameters
 
 .. literalinclude:: ../examples/composite_dependency.py
+
+
+Property overriding
+===================
+In some cases you will need to override dependency properties to inform
+FunDI about real behavior of the function.
+
+For example, you have function that returns awaitable object,
+but itself is not a coroutine function. In this case you will need 
+to override ``async_`` property of the dependency:
+
+.. code-block:: python 
+    from fundi import from_
+
+    def require_event_data(event: RemoteEvent):
+      return api.request.event_data(event.id)
+
+    def event_handler(data: RemoteEventData = from_(require_event_data, async_=True)):
+      ...
+..
+
+  This works the same for the ``context`` and ``generator`` properties.
+
+  To define asynchronous generator or context manager use combination 
+  of ``async_`` and ``generator`` or ``context``.
+
+
+Property inferring
+==================
+FunDI makes it's best to infer right properties using dependency's return type-hint 
+if it is defined.
+
+For example, if there is function that returns context-manager and type-hint is set 
+to contextlib.AbstractContextManager FunDI will correctly infer it as lifespan dependency.
+
+.. code-block:: python
+    from fundi import from_
+
+    from contextlib import AbstractContextManager
+    
+    def require_session() -> AbstractContextManager[Session]:
+      return session_manager.session_context()
+
+    
+    def endpoint(session: Session = from_(require_session)): ...
+
+..
+
+  This will work the same with type-hints like Generator, Awaitable or their
+  subclasses.
+
+  Also, this will work with their asynchronous versions.
+

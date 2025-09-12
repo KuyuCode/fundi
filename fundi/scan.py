@@ -2,9 +2,10 @@ import typing
 import inspect
 from dataclasses import replace
 from types import BuiltinFunctionType, FunctionType, MethodType
+from collections.abc import AsyncGenerator, Awaitable, Generator
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 
-from fundi.util import is_configured, get_configuration
+from fundi.util import is_configured, get_configuration, normalize_annotation
 from fundi.types import R, CallableInfo, Parameter, TypeResolver
 
 
@@ -67,19 +68,42 @@ def _is_async_context(call: typing.Any):
         return isinstance(call, AbstractAsyncContextManager)
 
 
-def scan(call: typing.Callable[..., R], caching: bool = True) -> CallableInfo[R]:
+def scan(
+    call: typing.Callable[..., R],
+    caching: bool = True,
+    async_: bool | None = None,
+    generator: bool | None = None,
+    context: bool | None = None,
+    use_return_annotation: bool = True,
+) -> CallableInfo[R]:
     """
     Get callable information
 
     :param call: callable to get information from
     :param caching:  whether to use cached result of this callable or not
+    :param async_: Override "async_" attriubute value
+    :param generator: Override "generator" attriubute value
+    :param context: Override "context" attriubute value
+    :param use_return_annotation: Whether to use call's return
+        annotation to define it's type
 
     :return: callable information
     """
 
     if hasattr(call, "__fundi_info__"):
         info = typing.cast(CallableInfo[typing.Any], getattr(call, "__fundi_info__"))
-        return replace(info, use_cache=caching)
+
+        overrides = {"use_cache": caching}
+        if async_ is not None:
+            overrides["async_"] = async_
+
+        if generator is not None:
+            overrides["generator"] = generator
+
+        if context is not None:
+            overrides["context"] = context
+
+        return replace(info, **overrides)
 
     if not callable(call):
         raise ValueError(
@@ -92,15 +116,37 @@ def scan(call: typing.Callable[..., R], caching: bool = True) -> CallableInfo[R]
 
     signature = inspect.signature(truecall)
 
-    generator = inspect.isgeneratorfunction(truecall)
-    async_generator = inspect.isasyncgenfunction(truecall)
+    return_ = type
+    if signature.return_annotation is not signature.empty:
+        return_ = normalize_annotation(signature.return_annotation)[0]
 
-    context = _is_context(call)
-    async_context = _is_async_context(call)
+    # WARNING: over-engineered logic!! :3
 
-    async_ = inspect.iscoroutinefunction(truecall) or async_generator or async_context
-    generator = generator or async_generator
-    context = context or async_context
+    _generator: bool = inspect.isgeneratorfunction(truecall)
+    _agenerator: bool = inspect.isasyncgenfunction(truecall)
+    _context: bool = _is_context(call)
+    _acontext: bool = _is_async_context(call)
+
+    # Getting "generator" using return typehint or __code__ flags
+    if generator is None:
+        generator = (
+            use_return_annotation
+            and (issubclass(return_, Generator) or issubclass(return_, AsyncGenerator))
+        ) or (_generator or _agenerator)
+
+    # Getting "context" using return typehint or callable type
+    if context is None:
+        context = (
+            use_return_annotation
+            and (issubclass(return_, (AbstractContextManager, AbstractAsyncContextManager)))
+        ) or (_context or _acontext)
+
+    # Getting "async_" using return typehint or __code__ flags or defined above variables
+    if async_ is None:
+        async_ = (
+            use_return_annotation
+            and issubclass(return_, (AsyncGenerator, AbstractAsyncContextManager, Awaitable))
+        ) or (_agenerator or _acontext or inspect.iscoroutinefunction(truecall))
 
     parameters = [_transform_parameter(parameter) for parameter in signature.parameters.values()]
 
