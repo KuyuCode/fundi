@@ -19,3 +19,10 @@ Mixed
 You can mix async and sync dependencies using :code:`ainject` function
 
 .. literalinclude:: ../examples/mixed.py
+
+
+Positional dependencies
+=======================
+You may want to define dependencies inside a positional parameter. To do so, you need to use ``typing.Annotated`` in pair of ``from_()``
+
+.. literalinclude:: ../examples/positional_dependency.py
