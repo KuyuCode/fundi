@@ -369,3 +369,16 @@ def test_scan_with_None_typehint():
     assert info.async_ is False
     assert info.generator is False
     assert info.context is False
+
+
+def test_scan_Annotated_dependency():
+    from typing import Annotated
+
+    def dep() -> int: ...
+
+    def dependant(value: Annotated[int, from_(dep)]): ...
+
+    info = scan(dependant)
+
+    assert info.parameters[0].from_ is not None
+    assert info.parameters[0].from_.call is dep

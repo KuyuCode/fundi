@@ -15,36 +15,37 @@ def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
     keyword_varying = parameter.kind == inspect.Parameter.VAR_KEYWORD
     keyword_only = parameter.kind == inspect.Parameter.KEYWORD_ONLY
 
-    if isinstance(parameter.default, CallableInfo):
-        return Parameter(
-            parameter.name,
-            parameter.annotation,
-            from_=typing.cast(CallableInfo[typing.Any], parameter.default),
-            positional_varying=positional_varying,
-            positional_only=positional_only,
-            keyword_varying=keyword_varying,
-            keyword_only=keyword_only,
-        )
-
-    has_default = parameter.default is not inspect.Parameter.empty
+    default = parameter.default
+    has_default = default is not inspect.Parameter.empty
+    from_: CallableInfo[typing.Any] | None = None
     resolve_by_type = False
+
+    if isinstance(default, CallableInfo):
+        has_default = False
+        from_ = typing.cast(CallableInfo[typing.Any], default)
 
     annotation = parameter.annotation
     if isinstance(annotation, TypeResolver):
         annotation = annotation.annotation
         resolve_by_type = True
 
-    elif typing.get_origin(annotation) is typing.Annotated:
+    elif typing.get_origin(annotation) is typing.Annotated and from_ is None:
         args = typing.get_args(annotation)
 
-        if args[1] is TypeResolver:
+        if TypeResolver in args:
             resolve_by_type = True
+        else:
+            presence: tuple[CallableInfo[typing.Any]] | tuple[()] = tuple(
+                filter(lambda x: isinstance(x, CallableInfo), args)
+            )
+            if presence:
+                from_ = presence[0]
 
     return Parameter(
         parameter.name,
         annotation,
-        from_=None,
-        default=parameter.default if has_default else None,
+        from_=from_,
+        default=default if has_default else None,
         has_default=has_default,
         resolve_by_type=resolve_by_type,
         positional_varying=positional_varying,
