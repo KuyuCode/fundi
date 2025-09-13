@@ -3,7 +3,8 @@ Dependant
 *********
 
 A dependant is any Python function that declares its dependencies by
-setting parameter defaults to :code:`from_(...)`. They also can be used as dependencies.
+setting parameter defaults to :code:`from_(...)`. They also can be used as dependencies and 
+be asynchronous as any other dependency.
 
   Note: By default, each dependency is evaluated only once
   per injection cycle — subsequent uses are cached.
@@ -65,7 +66,9 @@ You may want to wrap several dependencies together
         print(f"Using username {username} to hack into your wife's Instagram")
 
 
-Asynchronous dependant:
+Asynchronous dependants work the same as the synchronous ones.
+The key difference is that they are **asynchronous** (Of course!) and
+FunDI will ``await`` them when needed.
 
 .. code-block:: python
 
@@ -78,6 +81,23 @@ Asynchronous dependant:
     async def application(user: User = from_(require_user)):
         print(f"Current user is {user}")
 
-..
 
-  Async dependants works exactly the same - FunDI will :code:`await` them when needed.
+Dependants can define dependencies inside a positional parameter using the ``typing.Annotated`` type-hint.
+
+This may be used to keep logical order of the dependencies inside dependant, or ensure that 
+type-checker would not display false warning:
+
+.. code-block:: python
+
+    from typing import Annotated
+
+    from fundi import from_ 
+
+
+    def require_int() -> int:
+        return 1
+
+
+    def application(value: Annotated[int, from_(require_int)]):
+        print(f"Resolved {value = }")
+
