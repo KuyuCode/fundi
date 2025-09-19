@@ -382,3 +382,23 @@ def test_scan_Annotated_dependency():
 
     assert info.parameters[0].from_ is not None
     assert info.parameters[0].from_.call is dep
+
+
+def test_scan_disable_cache_on_parameter_awareness():
+    def modern(p: FromType[Parameter]): ...
+
+    info = scan(modern)
+
+    assert info.use_cache is False
+
+    def legacy(p: from_(Parameter)): ...
+
+    info = scan(legacy)
+
+    assert info.use_cache is False
+
+    def alternative(__fundi_parameter__: Parameter): ...
+
+    info = scan(alternative)
+
+    assert info.use_cache is False
