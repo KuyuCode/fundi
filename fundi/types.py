@@ -56,6 +56,10 @@ class CallableInfo(typing.Generic[R]):
     named_parameters: dict[str, Parameter] = field(init=False)
     key: "CacheKey" = field(init=False)
 
+    graphhook: typing.Callable[["CallableInfo[R]", Parameter], "CallableInfo[R] | None"] | None = (
+        None
+    )
+
     def __post_init__(self):
         self.named_parameters = {p.name: p for p in self.parameters}
         self.key = CacheKey(self.call)

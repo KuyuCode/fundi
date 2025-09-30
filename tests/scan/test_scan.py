@@ -1,9 +1,12 @@
+import typing
 import inspect
 import functools
+from typing import Callable
 from types import TracebackType
+
 from fundi.configurable import configurable_dependency
 from fundi import scan, from_, FromType, virtual_context
-from fundi.types import DependencyConfiguration, Parameter
+from fundi.types import CallableInfo, DependencyConfiguration, Parameter
 
 
 def test_scan_no_deps():
@@ -382,3 +385,24 @@ def test_scan_Annotated_dependency():
 
     assert info.parameters[0].from_ is not None
     assert info.parameters[0].from_.call is dep
+
+
+def test_scan_graphhook():
+    def hook(ci: CallableInfo[typing.Any], parameter: Parameter):
+        ci.key.add(parameter.name)
+        return ci
+
+    from fundi.hooks import with_hooks
+
+    @with_hooks(hook)
+    def dependency():
+        return 1
+
+    def dependant(value: int = from_(dependency)): ...
+
+    info = scan(dependant)
+
+    parameter = info.parameters[0]
+
+    assert parameter.from_ is not None
+    assert parameter.from_.key._items == [dependency, "value"]

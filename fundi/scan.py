@@ -41,7 +41,7 @@ def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
             if presence:
                 from_ = presence[0]
 
-    return Parameter(
+    parameter_ = Parameter(
         parameter.name,
         annotation,
         from_=from_,
@@ -53,6 +53,14 @@ def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
         keyword_varying=keyword_varying,
         keyword_only=keyword_only,
     )
+
+    if from_ is not None and from_.graphhook is not None:
+        from_ = from_.graphhook(from_, parameter_)
+
+        if from_ is not None:
+            return replace(parameter_, from_=from_)
+
+    return parameter_
 
 
 def _is_context(call: typing.Any):
