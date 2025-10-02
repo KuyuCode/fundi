@@ -69,23 +69,9 @@ def _is_async_context(call: typing.Any):
         return isinstance(call, AbstractAsyncContextManager)
 
 
-def _parameter_aware(parameters: list[Parameter]):
-    for p in parameters:
-        if p.name == "__fundi_parameter__":
-            return True
-
-        if p.resolve_by_type and p.annotation is Parameter:
-            return True
-
-        if p.annotation == typing.Annotated[Parameter, TypeResolver]:
-            return True
-
-    return False
-
-
 def scan(
     call: typing.Callable[..., R],
-    caching: bool | None = None,
+    caching: bool = True,
     async_: bool | None = None,
     generator: bool | None = None,
     context: bool | None = None,
@@ -108,10 +94,7 @@ def scan(
     if hasattr(call, "__fundi_info__"):
         info = typing.cast(CallableInfo[typing.Any], getattr(call, "__fundi_info__"))
 
-        overrides: dict[str, bool] = {}
-        if caching is not None:
-            overrides["use_cache"] = caching
-
+        overrides = {"use_cache": caching}
         if async_ is not None:
             overrides["async_"] = async_
 
@@ -172,12 +155,6 @@ def scan(
         ) or (_agenerator or _acontext or inspect.iscoroutinefunction(truecall))
 
     parameters = [_transform_parameter(parameter) for parameter in signature.parameters.values()]
-
-    if caching is None:
-        if _parameter_aware(parameters):
-            caching = False
-        else:
-            caching = True
 
     info = CallableInfo(
         call=call,
