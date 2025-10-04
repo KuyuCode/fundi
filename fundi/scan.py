@@ -1,12 +1,11 @@
 import typing
 import inspect
-from dataclasses import replace
 from types import BuiltinFunctionType, FunctionType, MethodType
 from collections.abc import AsyncGenerator, Awaitable, Generator
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 
-from fundi.util import is_configured, get_configuration, normalize_annotation
 from fundi.types import R, CallableInfo, Parameter, TypeResolver
+from fundi.util import is_configured, get_configuration, normalize_annotation
 
 
 def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
@@ -55,10 +54,10 @@ def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
     )
 
     if from_ is not None and from_.graphhook is not None:
-        from_ = from_.graphhook(from_, parameter_)
+        from_ = from_.graphhook(from_.copy(True), parameter_)
 
         if from_ is not None:
-            return replace(parameter_, from_=from_)
+            return parameter_.copy(from_=from_)
 
     return parameter_
 
@@ -112,7 +111,7 @@ def scan(
         if context is not None:
             overrides["context"] = context
 
-        return replace(info, **overrides)
+        return info.copy(**overrides)
 
     if not callable(call):
         raise ValueError(
@@ -163,12 +162,14 @@ def scan(
         ) or (_agenerator or _acontext or inspect.iscoroutinefunction(truecall))
 
     parameters = [_transform_parameter(parameter) for parameter in signature.parameters.values()]
+    hooks = getattr(call, "__fundi_hooks__", {})
 
     info = CallableInfo(
         call=call,
         use_cache=caching,
         async_=async_,
         context=context,
+        graphhook=hooks.get("graph"),
         generator=generator,
         parameters=parameters,
         return_annotation=signature.return_annotation,

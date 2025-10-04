@@ -1,6 +1,5 @@
 import typing
 
-from fundi.scan import scan as scan_
 from fundi.types import CallableInfo, Parameter
 
 R = typing.TypeVar("R")
@@ -11,11 +10,15 @@ def with_hooks(
     graph: typing.Callable[[CallableInfo[R], Parameter], CallableInfo[R] | None] | None = None,
 ):
     def applier(call: C) -> C:
-        info = scan_(call)
+        hooks: dict[str, typing.Callable[..., typing.Any]] | None = getattr(
+            call, "__fundi_hooks__", None
+        )
+        if hooks is None:
+            hooks = {}
+            setattr(call, "__fundi_hooks__", hooks)
 
-        info.graphhook = graph
-
-        setattr(call, "__fundi_info__", info)
+        if graph is not None:
+            hooks["graph"] = graph
 
         return call
 
