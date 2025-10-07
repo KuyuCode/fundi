@@ -4,11 +4,12 @@ from .scan import scan
 from .from_ import from_
 from . import exceptions
 from .resolve import resolve
+from .hooks import with_hooks
 from .debug import tree, order
 from .inject import inject, ainject
 from .configurable import configurable_dependency, MutableConfigurationWarning
-from .util import injection_trace, is_configured, get_configuration, normalize_annotation
 from .virtual_context import virtual_context, VirtualContextProvider, AsyncVirtualContextProvider
+from .util import injection_trace, is_configured, get_configuration, normalize_annotation, mutation
 from .types import CallableInfo, TypeResolver, InjectionTrace, R, Parameter, DependencyConfiguration
 
 
@@ -23,7 +24,9 @@ __all__ = [
     "inject",
     "resolve",
     "ainject",
+    "mutation",
     "Parameter",
+    "with_hooks",
     "exceptions",
     "CallableInfo",
     "TypeResolver",

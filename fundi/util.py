@@ -256,3 +256,33 @@ def normalize_annotation(annotation: typing.Any) -> tuple[typing.Any, ...]:
         type_options = (origin,)
 
     return type_options
+
+
+Target = typing.TypeVar("Target")
+P = typing.ParamSpec("P")
+
+
+def mutation(
+    *instructions: typing.Callable[typing.Concatenate[Target, P], typing.Any]
+) -> typing.Callable[typing.Concatenate[Target, P], Target]:
+    """
+    Create mutation function that will call all instructions
+    with the Target and return the Target itself afterwards
+
+    It is useful for combining functions that mutate object itself, not make new one
+
+    For example it can be used in FunDI graph hook to update CallableInfo's caching key::
+
+        from fundi.hooks import with_hooks
+
+        @with_hooks(graph=mutation(lambda ci, param: ci.key.add(param.name)))
+        def dependency(...): ...
+    """
+
+    def mutator(input_: Target, *args: P.args, **kwargs: P.kwargs) -> Target:
+        for instruction in instructions:
+            instruction(input_, *args, **kwargs)
+
+        return input_
+
+    return mutator
