@@ -1,5 +1,5 @@
 import typing
-from contextlib import ExitStack
+from collections.abc import Mapping
 
 from fundi import from_, scan, inject, configurable_dependency
 
@@ -11,9 +11,9 @@ def require_user() -> dict[str, str | tuple[str]]:
 @configurable_dependency
 def require_permission(
     permission: str,
-    user_resolver: typing.Callable[..., typing.Mapping[str, str | tuple[str]]] = require_user,
+    user_resolver: typing.Callable[..., Mapping[str, str | tuple[str]]] = require_user,
 ):
-    def checker(user: typing.Mapping[str, str | tuple[str]] = from_(user_resolver)) -> None:
+    def checker(user: Mapping[str, str | tuple[str]] = from_(user_resolver)) -> None:
         if permission not in user["permissions"]:
             raise PermissionError(permission)
 
@@ -26,5 +26,4 @@ def application(
     print("User has permission")
 
 
-with ExitStack() as stack:
-    inject({}, scan(application), stack)
+inject({}, scan(application))

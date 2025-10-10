@@ -1,5 +1,3 @@
-from contextlib import ExitStack
-
 from fundi import scan, inject
 
 
@@ -14,9 +12,9 @@ def application(*, app_name: str, token: str) -> int:
     return 0
 
 
-with ExitStack() as stack:
-    exit_code = inject(
-        {"app_name": "Application name", "token": "f5a7f859-8d0c-42b8-bc72-b7ea9ade0519"},
-        scan(application),
-        stack,
-    )
+exit_code = inject(
+    {"app_name": "Application name", "token": "f5a7f859-8d0c-42b8-bc72-b7ea9ade0519"},
+    scan(application),
+)
+
+assert exit_code == 0, "Exit code != 0"

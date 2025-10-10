@@ -60,12 +60,14 @@ def injection_impl(
 def inject(
     scope: collections.abc.Mapping[str, typing.Any],
     info: CallableInfo[typing.Any],
-    stack: contextlib.ExitStack,
+    stack: contextlib.ExitStack | None = None,
     cache: collections.abc.MutableMapping[CacheKey, typing.Any] | None = None,
     override: collections.abc.Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> typing.Any:
     """
     Synchronously inject dependencies into callable.
+
+    If exit stack is not provided - it will be created and closed after injection
 
     :param scope: container with contextual values
     :param info: callable information
@@ -76,6 +78,10 @@ def inject(
     """
     if info.async_:
         raise RuntimeError("Cannot process async functions in synchronous injection")
+
+    if stack is None:
+        with contextlib.ExitStack() as stack:
+            return inject(scope, info, stack, cache, override)
 
     if cache is None:
         cache = {}
@@ -103,12 +109,14 @@ def inject(
 async def ainject(
     scope: collections.abc.Mapping[str, typing.Any],
     info: CallableInfo[typing.Any],
-    stack: contextlib.AsyncExitStack,
+    stack: contextlib.AsyncExitStack | None = None,
     cache: collections.abc.MutableMapping[CacheKey, typing.Any] | None = None,
     override: collections.abc.Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> typing.Any:
     """
     Asynchronously inject dependencies into callable.
+
+    If exit stack is not provided - it will be created and closed after injection
 
     :param scope: container with contextual values
     :param info: callable information
@@ -117,6 +125,10 @@ async def ainject(
     :param override: override dependencies
     :return: result of callable
     """
+    if stack is None:
+        async with contextlib.AsyncExitStack() as stack:
+            return await ainject(scope, info, stack, cache, override)
+
     if cache is None:
         cache = {}
 

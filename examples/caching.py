@@ -1,5 +1,4 @@
-from typing import Generator
-from contextlib import ExitStack
+from collections.abc import Generator
 
 from fundi import from_, inject, scan
 
@@ -25,5 +24,4 @@ def application(
     print(f"Application started with {session = }")
 
 
-with ExitStack() as stack:
-    inject({}, scan(application), stack)
+inject({}, scan(application))

@@ -1,5 +1,3 @@
-from contextlib import ExitStack
-
 from fundi import from_, scan, inject, injection_trace
 
 
@@ -31,8 +29,7 @@ def application(
 
 
 try:
-    with ExitStack() as stack:
-        inject({}, scan(application), stack)
+    inject({}, scan(application))
 except (
     ConnectionRefusedError
 ):  # <== Lifespan dependency does not reraise exception, but it still goes downstream

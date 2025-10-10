@@ -1,5 +1,3 @@
-from contextlib import ExitStack
-
 from fundi import from_, inject, scan, virtual_context
 
 
@@ -14,5 +12,4 @@ def application(virtual_ctx_value: str = from_(virtual_ctx)):
     print(f"Application started with {virtual_ctx_value = }")
 
 
-with ExitStack() as stack:
-    inject({}, scan(application), stack)
+inject({}, scan(application))

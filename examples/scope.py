@@ -1,5 +1,4 @@
-from typing import Generator
-from contextlib import ExitStack
+from collections.abc import Generator
 
 from fundi import from_, inject, scan
 
@@ -20,6 +19,5 @@ def application(
     print(f"Application started with {session = }")
 
 
-with ExitStack() as stack:
-    # "database_url" key goes to "database_url" parameter of require_session function
-    inject({"database_url": "url"}, scan(application), stack)
+# "database_url" key goes to "database_url" parameter of require_session function
+inject({"database_url": "url"}, scan(application))
