@@ -256,3 +256,37 @@ def normalize_annotation(annotation: typing.Any) -> tuple[typing.Any, ...]:
         type_options = (origin,)
 
     return type_options
+
+
+Target = typing.TypeVar("Target")
+P = typing.ParamSpec("P")
+
+
+def combine_hooks(*hooks: typing.Callable[P, typing.Any]) -> typing.Callable[P, None]:
+    """
+    Combine multiple hooks together.
+
+    All hooks will be called with the same parameters.
+
+    It is useful for combining hooks that mutate object itself, not produce new one
+
+    For example it can be used in FunDI graph hook to update CallableInfo's caching key::
+
+        from fundi.hooks import with_hooks
+
+        @with_hooks(
+            graph=combine_hooks(
+                lambda ci, param: ci.key.add(param.name),
+                lambda ci, _: ci.key.add("custom value")
+            )
+        )
+        def dependency(...): ...
+    """
+
+    def hook(*args: P.args, **kwargs: P.kwargs) -> None:
+        for instruction in hooks:
+            instruction(*args, **kwargs)
+
+        return None
+
+    return hook

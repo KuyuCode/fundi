@@ -30,5 +30,6 @@ Deep dive to each component
     dependant
     scope
     injection
+    hooks
     overriding
     debugging

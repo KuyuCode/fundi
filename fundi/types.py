@@ -2,7 +2,7 @@ import typing
 import collections
 import collections.abc
 from typing_extensions import override
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 __all__ = [
     "R",
@@ -42,6 +42,14 @@ class Parameter:
     positional_varying: bool = False
     keyword_varying: bool = False
 
+    def copy(self, deep: bool = False, **update: typing.Any):
+        if not deep:
+            return replace(self, **update)
+
+        return replace(
+            self, **{"from_": self.from_.copy(deep=True) if self.from_ else None, **update}
+        )
+
 
 @dataclass
 class CallableInfo(typing.Generic[R]):
@@ -55,6 +63,8 @@ class CallableInfo(typing.Generic[R]):
     configuration: "DependencyConfiguration | None"
     named_parameters: dict[str, Parameter] = field(init=False)
     key: "CacheKey" = field(init=False)
+
+    graphhook: typing.Callable[["CallableInfo[R]", Parameter], "typing.Any"] | None = None
 
     def __post_init__(self):
         self.named_parameters = {p.name: p for p in self.parameters}
@@ -145,6 +155,18 @@ class CallableInfo(typing.Generic[R]):
                 positional += (value,)
 
         return positional, keyword
+
+    def copy(self, deep: bool = False, **update: typing.Any):
+        if not deep:
+            return replace(self, **update)
+
+        return replace(
+            self,
+            **{
+                "parameters": [parameter.copy(deep=True) for parameter in self.parameters],
+                **update,
+            },
+        )
 
 
 class CacheKey:
