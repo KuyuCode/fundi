@@ -54,10 +54,10 @@ def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
     )
 
     if from_ is not None and from_.graphhook is not None:
-        from_ = from_.graphhook(from_.copy(True), parameter_)
+        from_copy = from_.copy(deep=True)
+        from_.graphhook(from_copy, parameter_.copy())
 
-        if from_ is not None:
-            return parameter_.copy(from_=from_)
+        return parameter_.copy(from_=from_copy)
 
     return parameter_
 

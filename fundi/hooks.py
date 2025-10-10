@@ -7,7 +7,7 @@ C = typing.TypeVar("C", bound=typing.Callable[..., typing.Any])
 
 
 def with_hooks(
-    graph: typing.Callable[[CallableInfo[R], Parameter], CallableInfo[R] | None] | None = None,
+    graph: typing.Callable[[CallableInfo[R], Parameter], typing.Any] | None = None,
 ):
     def applier(call: C) -> C:
         hooks: dict[str, typing.Callable[..., typing.Any]] | None = getattr(
