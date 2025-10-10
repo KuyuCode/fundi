@@ -1,5 +1,3 @@
-from contextlib import ExitStack
-
 from fundi import inject, scan, FromType
 
 
@@ -13,6 +11,5 @@ def application(
     print(f"Application started with {session = }")
 
 
-with ExitStack() as stack:
-    # "_" key goes to "session" parameter of application function
-    inject({"_": Session()}, scan(application), stack)
+# "_" key goes to "session" parameter of application function
+inject({"_": Session()}, scan(application))

@@ -5,10 +5,10 @@ from collections.abc import Generator, AsyncGenerator, Mapping, MutableMapping, 
 from fundi.types import CacheKey, CallableInfo
 
 from contextlib import (
-    AsyncExitStack,
-    AbstractContextManager,
-    ExitStack as SyncExitStack,
     AbstractAsyncContextManager,
+    ExitStack as SyncExitStack,
+    AbstractContextManager,
+    AsyncExitStack,
 )
 
 R = typing.TypeVar("R")
@@ -29,7 +29,7 @@ def injection_impl(
 def inject(
     scope: Mapping[str, typing.Any],
     info: CallableInfo[Generator[R, None, None]],
-    stack: ExitStack,
+    stack: ExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> R: ...
@@ -37,7 +37,7 @@ def inject(
 def inject(
     scope: Mapping[str, typing.Any],
     info: CallableInfo[AbstractContextManager[R]],
-    stack: ExitStack,
+    stack: ExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> R: ...
@@ -45,7 +45,7 @@ def inject(
 def inject(
     scope: Mapping[str, typing.Any],
     info: CallableInfo[R],
-    stack: ExitStack,
+    stack: ExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> R: ...
@@ -53,7 +53,7 @@ def inject(
 async def ainject(
     scope: Mapping[str, typing.Any],
     info: CallableInfo[Generator[R, None, None]],
-    stack: AsyncExitStack,
+    stack: AsyncExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> R: ...
@@ -61,7 +61,7 @@ async def ainject(
 async def ainject(
     scope: Mapping[str, typing.Any],
     info: CallableInfo[AsyncGenerator[R, None]],
-    stack: AsyncExitStack,
+    stack: AsyncExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> R: ...
@@ -69,7 +69,7 @@ async def ainject(
 async def ainject(
     scope: Mapping[str, typing.Any],
     info: CallableInfo[Awaitable[R]],
-    stack: AsyncExitStack,
+    stack: AsyncExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> R: ...
@@ -77,7 +77,7 @@ async def ainject(
 async def ainject(
     scope: Mapping[str, typing.Any],
     info: CallableInfo[AbstractAsyncContextManager[R]],
-    stack: AsyncExitStack,
+    stack: AsyncExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> R: ...
@@ -85,7 +85,7 @@ async def ainject(
 async def ainject(
     scope: Mapping[str, typing.Any],
     info: CallableInfo[AbstractContextManager[R]],
-    stack: AsyncExitStack,
+    stack: AsyncExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> R: ...
@@ -93,7 +93,7 @@ async def ainject(
 async def ainject(
     scope: Mapping[str, typing.Any],
     info: CallableInfo[R],
-    stack: AsyncExitStack,
+    stack: AsyncExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
 ) -> R: ...

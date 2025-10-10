@@ -271,3 +271,31 @@ async def test_async_context():
     async with AsyncExitStack() as stack:
         result = await ainject({"name": "context"}, scan(dep), stack)
         assert result == "context"
+
+
+def test_sync_no_stack():
+    states = []
+
+    def dependency():
+        states.append("start")
+        yield "result"
+        states.append("end")
+
+    result = inject({}, scan(dependency))
+    assert result == "result"
+
+    assert states == ["start", "end"]
+
+
+async def test_async_no_stack():
+    states = []
+
+    async def dependency():
+        states.append("start")
+        yield "result"
+        states.append("end")
+
+    result = await ainject({}, scan(dependency))
+    assert result == "result"
+
+    assert states == ["start", "end"]

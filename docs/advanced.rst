@@ -38,6 +38,21 @@ cleanup if exception occurred.
 
 .. literalinclude:: ../examples/lifespan_exception_awareness.py
 
+
+Own exit stack
+==============
+If you need to do some work before injected dependencies will tear-down - you can pass your own
+exit stack to ``inject()`` and ``ainject()`` functions.
+
+Synchronous example:
+
+.. literalinclude:: ../examples/own_exitstack.py
+
+Asynchronous example:
+
+.. literalinclude:: ../examples/own_exitstack_async.py
+
+
 Caching
 =======
 FunDI caches dependency results by default — so each dependency is

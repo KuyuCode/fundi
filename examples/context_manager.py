@@ -17,5 +17,4 @@ def application(session: str = from_(RequireSession)):
     print(f"Application started with {session = }")
 
 
-with ExitStack() as stack:
-    inject({}, scan(application), stack)
+inject({}, scan(application))

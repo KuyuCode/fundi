@@ -34,8 +34,7 @@ Example of synchronous injection:
         print(f"Application started with {user_id = } and {username = }")
 
 
-    with ExitStack() as stack:
-        inject({"username": "Kuyugama"}, scan(application), stack)
+    inject({"username": "Kuyugama"}, scan(application))
 
 
 Example of asynchronous injection:
@@ -59,8 +58,7 @@ Example of asynchronous injection:
 
 
     async def main():
-        async with AsyncExitStack() as stack:
-            ainject({"username": "Kuyugama"}, scan(application), stack)
+        ainject({"username": "Kuyugama"}, scan(application))
 
     if __name__ == "__main__":
         asyncio.run(main())
@@ -79,14 +77,36 @@ Example of injection that produces value:
         return secrets.token_hex(12)
 
 
-    with ExitStack() as stack:
-        user_id = inject({}, scan(require_user_id), stack)
-        print("Generated user id is", user_id)
+    user_id = inject({}, scan(require_user_id))
+    print("Generated user id is", user_id)
 
 ..
 
     The same works with asynchronous injection
 
+
+Own exit stack
+==============
+You may want to do some work before injected dependencies will tear-down. 
+To do this - you should pass your own exit stack, do your stuff and then close the exit stack.
+
+Synchronous example
+-------------------
+
+.. literalinclude:: ../../examples/own_exitstack.py
+
+Asynchronous example
+--------------------
+
+.. literalinclude:: ../../examples/own_exitstack_async.py
+..
+
+
+    In earlier versions, FunDI required an explicit ExitStack or AsyncExitStack to 
+    be provided for every injection.
+
+    It is now optional — if not provided, FunDI will create and manage one automatically.
+    
 
 Dependency parameter awareness
 ==============================
@@ -142,7 +162,7 @@ Summary
 +--------------------------------+--------------------+------------------------+
 | Mixed (sync + async)           | No                 | Yes                    |
 +--------------------------------+--------------------+------------------------+
-| Requires stack                 | :code:`ExitStack`  | :code:`AsyncExitStack` |
+| Exit stack                     | :code:`ExitStack`  | :code:`AsyncExitStack` |
 +--------------------------------+--------------------+------------------------+
 | Dependency parameter awareness | Yes                | Yes                    |
 +--------------------------------+--------------------+------------------------+

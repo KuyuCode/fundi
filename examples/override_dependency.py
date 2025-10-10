@@ -1,5 +1,3 @@
-from contextlib import ExitStack
-
 from fundi import from_, inject, scan
 
 
@@ -15,5 +13,4 @@ def application(user: str = from_(require_user)):
     print(f"Application started with {user = }")
 
 
-with ExitStack() as stack:
-    inject({}, scan(application), stack, override={require_user: scan(test_require_user)})
+inject({}, scan(application), override={require_user: scan(test_require_user)})

@@ -1,5 +1,3 @@
-from contextlib import ExitStack
-
 from fundi import scan, FromType, from_, inject, Parameter
 
 
@@ -19,5 +17,4 @@ def application(token: str = from_(header)):
     assert token == f"token-{str!r}"
 
 
-with ExitStack() as stack:
-    inject({}, scan(application), stack)
+inject({}, scan(application))

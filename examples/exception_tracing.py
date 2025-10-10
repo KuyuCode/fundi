@@ -1,5 +1,3 @@
-from contextlib import ExitStack
-
 from fundi import from_, scan, inject, injection_trace
 
 
@@ -14,8 +12,7 @@ def application(
     print("Animal:", animal)
 
 
-with ExitStack() as stack:
-    try:
-        inject({}, scan(application), stack)
-    except Exception as e:
-        print(injection_trace(e))
+try:
+    inject({}, scan(application))
+except Exception as e:
+    print(injection_trace(e))

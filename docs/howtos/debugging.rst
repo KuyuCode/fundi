@@ -72,11 +72,10 @@ library adds its injection trace to exception.
         print("Animal:", animal)
 
 
-    with ExitStack() as stack:
-        try:
-            inject({}, scan(application), stack)
-        except Exception as e:
-            print(injection_trace(e))
+    try:
+        inject({}, scan(application))
+    except Exception as e:
+        print(injection_trace(e))
 
 Output would be::
 
