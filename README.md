@@ -33,8 +33,7 @@ def greet(user: str = from_(require_user)):
     print(f"Hello, {user}!")
 
 
-with ExitStack() as stack:
-    inject({}, scan(greet), stack)
+inject({}, scan(greet))
 ```
 
 See the documentation to get more examples: https://fundi.readthedocs.io/en/latest/
