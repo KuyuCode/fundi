@@ -20,8 +20,6 @@ This library was inspired by FastAPI's dependency injection. The reasons for its
 ## No more words, let's try!
 
 ```python
-from contextlib import ExitStack
-
 from fundi import scan, from_, inject
 
 
