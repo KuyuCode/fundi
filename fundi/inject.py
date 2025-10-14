@@ -33,6 +33,10 @@ def injection_impl(
     If any error occurs during resolution, attaches injection trace and re-raises the exception.
     """
 
+    if info.scopehook:
+        scope = dict(scope)
+        info.scopehook(scope, info)
+
     values: dict[str, typing.Any] = {}
     try:
         for result in resolve(scope, info, cache, override):
@@ -41,7 +45,9 @@ def injection_impl(
 
             if not result.resolved:
                 dependency = result.dependency
-                assert dependency is not None
+                assert (
+                    dependency is not None
+                ), "Dependency expected, got None. This is a bug, please report at https://github.com/KuyuCode/fundi"
 
                 value = yield {**scope, "__fundi_parameter__": result.parameter}, dependency, True
 
