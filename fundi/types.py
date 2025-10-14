@@ -29,6 +29,9 @@ class TypeResolver:
     annotation: type
 
 
+ScopeHook = typing.Callable[[dict[str, typing.Any], "CallableInfo[typing.Any]"], typing.Any]
+
+
 @dataclass
 class Parameter:
     name: str
@@ -65,6 +68,7 @@ class CallableInfo(typing.Generic[R]):
     key: "CacheKey" = field(init=False)
 
     graphhook: typing.Callable[["CallableInfo[R]", Parameter], "typing.Any"] | None = None
+    scopehook: ScopeHook | None = None
 
     def __post_init__(self):
         self.named_parameters = {p.name: p for p in self.parameters}

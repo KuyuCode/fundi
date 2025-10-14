@@ -1,6 +1,7 @@
 from types import TracebackType
 from contextlib import ExitStack, AsyncExitStack
 
+from fundi.hooks import with_hooks
 from fundi.types import InjectionTrace
 from fundi import from_, scan, inject, ainject, injection_trace, Parameter, FromType
 
@@ -299,3 +300,11 @@ async def test_async_no_stack():
     assert result == "result"
 
     assert states == ["start", "end"]
+
+
+def test_scope_hook():
+    @with_hooks(scope=lambda scope, _: scope.update(value="Hook value"))
+    def dependency(value: str):
+        assert value == "Hook value"
+
+    inject({}, scan(dependency))

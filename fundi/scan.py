@@ -170,6 +170,7 @@ def scan(
         async_=async_,
         context=context,
         graphhook=hooks.get("graph"),
+        scopehook=hooks.get("scope"),
         generator=generator,
         parameters=parameters,
         return_annotation=signature.return_annotation,

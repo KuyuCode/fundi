@@ -30,8 +30,16 @@ Scope hook
 Scope hook is called when dependency is about to be injected. 
 This hook should be used to produce dependency specific scope values.
 
-This hook will be added in future releases.
+Scope hook function is called with two positional arguments:
 
+- ``scope`` - string based dictionary. Hook should mutate it, to change dependency scope
+- ``CallableInfo`` - information about the dependency that is about to be injected
+
+As in **graph** hook the returned value of the scope hook would **not** be used.
+
+Scope hook example:
+
+.. literalinclude:: ../../examples/hooks_scope.py
 
 Combining hooks
 ===============
