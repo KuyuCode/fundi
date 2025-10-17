@@ -56,6 +56,9 @@ def injection_impl(
 
             values[name] = value
 
+        for side_effect in info.side_effects:
+            yield {**scope, "__fundi_parameter__": None}, side_effect, True
+
         yield values, info, False
 
     except Exception as exc:

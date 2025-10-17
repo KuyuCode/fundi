@@ -308,3 +308,35 @@ def test_scope_hook():
         assert value == "Hook value"
 
     inject({}, scan(dependency))
+
+
+def test_inject_side_effects():
+    side_effect_executed = False
+
+    def side_effect():
+        nonlocal side_effect_executed
+        side_effect_executed = True
+
+    def func():
+        pass
+
+    with ExitStack() as stack:
+        inject({}, scan(func, side_effects=(side_effect,)), stack)
+
+    assert side_effect_executed is True
+
+
+async def test_ainject_side_effects():
+    side_effect_executed = False
+
+    def side_effect():
+        nonlocal side_effect_executed
+        side_effect_executed = True
+
+    def func():
+        pass
+
+    async with AsyncExitStack() as stack:
+        await ainject({}, scan(func, side_effects=(side_effect,)), stack)
+
+    assert side_effect_executed is True
