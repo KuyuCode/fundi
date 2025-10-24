@@ -56,8 +56,18 @@ def injection_impl(
 
             values[name] = value
 
-        for side_effect in info.side_effects:
-            yield {**scope, "__fundi_parameter__": None}, side_effect, True
+        if info.side_effects:
+            _values = values.copy()
+            _info = info.copy(True)
+            _scope = {**scope}
+            for side_effect in info.side_effects:
+                yield {
+                    **scope,
+                    "__values__": _values,
+                    "__dependant__": _info,
+                    "__scope__": _scope,
+                    "__fundi_parameter__": None,
+                }, side_effect, True
 
         yield values, info, False
 

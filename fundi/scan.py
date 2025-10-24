@@ -1,4 +1,3 @@
-import itertools
 import typing
 import inspect
 from types import BuiltinFunctionType, FunctionType, MethodType
@@ -91,11 +90,12 @@ def scan(
 
     :param call: callable to get information from
     :param caching:  whether to use cached result of this callable or not
-    :param async_: Override "async_" attriubute value
-    :param generator: Override "generator" attriubute value
-    :param context: Override "context" attriubute value
+    :param async_: Override "async_" attribute value
+    :param generator: Override "generator" attribute value
+    :param context: Override "context" attribute value
     :param use_return_annotation: Whether to use call's return
         annotation to define it's type
+    :param side_effects: functions that will be injected before this dependant
 
     :return: callable information
     """
