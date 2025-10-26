@@ -1,0 +1,23 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: FunDI
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Kuyugama
+    family-names: Hikamiya
+    email: mail.kuyugama@gmail.com
+repository-code: 'https://github.com/KuyuCode/fundi'
+abstract: Functional programming dependency injection
+keywords:
+  - functional programming
+  - dependency injection
+  - fundi
+license: GPL-3.0
+commit: a3eb7c8ce975ba25e7fb32976b89b2fc06a2d012
+version: 1.3.7
+date-released: '2025-10-10'
