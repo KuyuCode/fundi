@@ -70,6 +70,8 @@ class CallableInfo(typing.Generic[R]):
     graphhook: typing.Callable[["CallableInfo[R]", Parameter], "typing.Any"] | None = None
     scopehook: ScopeHook | None = None
 
+    side_effects: tuple["CallableInfo[typing.Any]", ...] = ()
+
     def __post_init__(self):
         self.named_parameters = {p.name: p for p in self.parameters}
         self.key = CacheKey(self.call)

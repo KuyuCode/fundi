@@ -3,6 +3,7 @@ from contextlib import ExitStack, AsyncExitStack
 
 from fundi.hooks import with_hooks
 from fundi.types import InjectionTrace
+from fundi.side_effects import with_side_effects
 from fundi import from_, scan, inject, ainject, injection_trace, Parameter, FromType
 
 
@@ -308,3 +309,105 @@ def test_scope_hook():
         assert value == "Hook value"
 
     inject({}, scan(dependency))
+
+
+def test_inject_side_effects():
+    side_effect_executed = False
+
+    def side_effect():
+        nonlocal side_effect_executed
+        side_effect_executed = True
+
+    def func():
+        pass
+
+    with ExitStack() as stack:
+        inject({}, scan(func, side_effects=(side_effect,)), stack)
+
+    assert side_effect_executed is True
+
+
+async def test_ainject_side_effects():
+    side_effect_executed = False
+
+    def side_effect():
+        nonlocal side_effect_executed
+        side_effect_executed = True
+
+    def func():
+        pass
+
+    async with AsyncExitStack() as stack:
+        await ainject({}, scan(func, side_effects=(side_effect,)), stack)
+
+    assert side_effect_executed is True
+
+
+async def test_ainject_global_side_effects():
+    side_effect_executed = False
+
+    def side_effect():
+        nonlocal side_effect_executed
+        side_effect_executed = True
+
+    @with_side_effects(side_effect)
+    def func():
+        pass
+
+    async with AsyncExitStack() as stack:
+        await ainject({}, scan(func), stack)
+
+    assert side_effect_executed is True
+
+
+def test_inject_global_side_effects():
+    side_effect_executed = False
+
+    def side_effect():
+        nonlocal side_effect_executed
+        side_effect_executed = True
+
+    @with_side_effects(side_effect)
+    def func():
+        pass
+
+    with ExitStack() as stack:
+        inject({}, scan(func), stack)
+
+    assert side_effect_executed is True
+
+
+async def test_ainject_mixed_side_effects():
+    side_effect_injections = 0
+
+    def side_effect():
+        nonlocal side_effect_injections
+        side_effect_injections += 1
+
+    @with_side_effects(side_effect)
+    def func():
+        pass
+
+    async with AsyncExitStack() as stack:
+        # scan filters out side effect duplications, so we need to pass it as lambda
+        await ainject({}, scan(func, side_effects=(lambda: side_effect(),)), stack)
+
+    assert side_effect_injections == 2
+
+
+def test_inject_mixed_side_effects():
+    side_effect_injections = 0
+
+    def side_effect():
+        nonlocal side_effect_injections
+        side_effect_injections += 1
+
+    @with_side_effects(side_effect)
+    def func():
+        pass
+
+    with ExitStack() as stack:
+        # scan filters out side effect duplications, so we need to pass it as lambda
+        inject({}, scan(func, side_effects=(lambda: side_effect(),)), stack)
+
+    assert side_effect_injections == 2

@@ -83,25 +83,30 @@ def scan(
     generator: bool | None = None,
     context: bool | None = None,
     use_return_annotation: bool = True,
+    side_effects: tuple[typing.Callable[..., typing.Any], ...] = (),
 ) -> CallableInfo[R]:
     """
     Get callable information
 
     :param call: callable to get information from
     :param caching:  whether to use cached result of this callable or not
-    :param async_: Override "async_" attriubute value
-    :param generator: Override "generator" attriubute value
-    :param context: Override "context" attriubute value
+    :param async_: Override "async_" attribute value
+    :param generator: Override "generator" attribute value
+    :param context: Override "context" attribute value
     :param use_return_annotation: Whether to use call's return
         annotation to define it's type
+    :param side_effects: functions that will be injected before this dependant
 
     :return: callable information
     """
+    _side_effects: list[CallableInfo[typing.Any]] = []
+    for side_effect in side_effects:
+        _side_effects.append(scan(side_effect))
 
     if hasattr(call, "__fundi_info__"):
         info = typing.cast(CallableInfo[typing.Any], getattr(call, "__fundi_info__"))
 
-        overrides = {"use_cache": caching}
+        overrides: dict[str, typing.Any] = {"use_cache": caching}
         if async_ is not None:
             overrides["async_"] = async_
 
@@ -110,6 +115,15 @@ def scan(
 
         if context is not None:
             overrides["context"] = context
+
+        if side_effects:
+            for side_effect in info.side_effects:
+                if side_effect in _side_effects:
+                    continue
+
+                _side_effects.append(side_effect)
+
+            overrides["side_effects"] = tuple(_side_effects)
 
         return info.copy(**overrides)
 
@@ -171,6 +185,7 @@ def scan(
         context=context,
         graphhook=hooks.get("graph"),
         scopehook=hooks.get("scope"),
+        side_effects=tuple(_side_effects),
         generator=generator,
         parameters=parameters,
         return_annotation=signature.return_annotation,
