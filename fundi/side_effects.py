@@ -1,5 +1,5 @@
-from typing import Callable, TypeVar
 import typing
+from typing import Callable, TypeVar
 
 from fundi.scan import scan
 

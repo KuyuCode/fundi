@@ -2,8 +2,8 @@ from types import TracebackType
 from contextlib import ExitStack, AsyncExitStack
 
 from fundi.hooks import with_hooks
-from fundi.side_effects import with_side_effects
 from fundi.types import InjectionTrace
+from fundi.side_effects import with_side_effects
 from fundi import from_, scan, inject, ainject, injection_trace, Parameter, FromType
 
 
