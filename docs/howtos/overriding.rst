@@ -2,15 +2,13 @@
 Overriding
 **********
 
-Overriding is the must have feature. This feature makes feel less pain while writing tests.
-Overriding works seamlessly in both sync and async contexts —
-allowing you to replace either dependency callables or their results during injection.
+Dependency overriding is a feature that allows you to override dependency or its result.
 
-Overridden can be
-    Dependency result - dependency callable would not be called. Instead - provided value would be used.
+You can override either:
+    Dependency result — the dependency callable will not be executed; 
+    instead, the provided value will be used.
 
-    Dependency callable - dependency callable would be overridden during injection
-    and provided callable would be called instead.
+    Dependency callable — you can override one dependency with another
 
 Overriding result:
     :code:`override={require_user: test_user}`
@@ -20,14 +18,10 @@ Overriding callable:
     :code:`override={require_user: scan(mock_user_func)}`
     → FunDI will call :code:`mock_user_func` instead of :code:`require_user`.
 
-This works with both inject() and ainject().
-
 
 Example of overriding dependency result:
 
 .. code-block:: python
-
-    from contextlib import ExitStack
 
     from fundi import scan, inject
 
@@ -41,8 +35,7 @@ Example of overriding dependency result:
         username="test_user",
     )
 
-    with ExitStack() as stack:
-        inject({"username": test_user.username}, scan(application), stack, override={require_user: test_user})
+    inject({"username": test_user.username}, scan(application), override={require_user: test_user})
 
 
 Example of overriding dependency callable:
@@ -68,6 +61,5 @@ Example of overriding dependency callable:
         return test_user
 
 
-    with ExitStack() as stack:
-        inject({"username": test_user.username}, scan(application), stack, override={require_user: scan(test_require_user)})
+    inject({"username": test_user.username}, scan(application), override={require_user: scan(test_require_user)})
 

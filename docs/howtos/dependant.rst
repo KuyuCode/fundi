@@ -6,10 +6,10 @@ A dependant is any Python function that declares its dependencies by
 setting parameter defaults to :code:`from_(...)`. They also can be used as dependencies and 
 be asynchronous as any other dependency.
 
-  Note: By default, each dependency is evaluated only once
-  per injection cycle — subsequent uses are cached.
+  Note: By default, each of its dependencies is evaluated only once
+  per injection — subsequent uses are cached.
 
-  To disable this behavior use :code:`caching=False` parameter in :code:`from_(...)` function
+  To override this behavior, use :code:`caching=False` parameter in ``from_(...)`` or ``scan(...)`` functions
 
 
 Example of dependant that use dependency to get current user:
@@ -28,14 +28,15 @@ Example of dependant that use dependency to get current user:
 
   In some cases, you may need to manually specify whether dependency is asynchronous,
   generator or context manager.
-  To do so - ``from_()`` provides parameters to override default scanning 
+  To do so — ``from_()`` provides parameters to override default scanning 
   behavior ``from_(call, *, async_: bool, generator: bool, context: bool)``
   
-  **Note** that ``async_`` may be used in combination with generator or context
+  **Note** that ``async_`` may be used in combination with generator or context 
+  to define asynchronous generator or context manager.
   
   **Also**, FunDI will try to define this properties using function 
   return type-hint if defined. To disable this behavior use
-  ``use_return_annotation=False`` parameter
+  ``use_return_annotation=False`` parameter.
 
 You may want to wrap several dependencies together
 (e.g., name + ID = username) to pass them as a single unit:
@@ -59,7 +60,7 @@ You may want to wrap several dependencies together
         name: str = from_(require_random_name),
         id_: str = from_(require_unique_id)
     ) -> str:
-        return f"{name} - {id_}"
+        return f"{name} — {id_}"
 
 
     def application(username: str = from_(require_username)):

@@ -2,18 +2,20 @@
 Injection
 *********
 
-You made a great trip to this page, we almost finished!
 
 Injection is the main purpose of this library. This is the process of making it all work and sound.
 
 Injection can be
-    Synchronous - performed by :code:`inject` function.
+    Synchronous — performed by :code:`inject` function.
     Supports only synchronous dependencies and dependants.
     If any dependency or dependant is asynchronous — use :code:`ainject` instead.
 
-    Asynchronous - performed by :code:`ainject` function.
+    Asynchronous — performed by :code:`ainject` function.
     Supports both async and sync dependencies and dependants.
     **FunDI handles both sync and async dependencies transparently, even if they’re mixed.**
+
+      Note that synchronous dependencies would not be called in a thread. 
+      So it is safe to do event-loop related stuff in synchronous dependencies.
 
 
 Example of synchronous injection:
@@ -87,8 +89,9 @@ Example of injection that produces value:
 
 Own exit stack
 ==============
-You may want to do some work before injected dependencies will tear-down. 
-To do this - you should pass your own exit stack, do your stuff and then close the exit stack.
+You may want to control when dependencies are torn down. 
+To do so, provide your own exit stack. When you need dependencies to be torn down, 
+simply close the stack — that’s it!
 
 Synchronous example
 -------------------
