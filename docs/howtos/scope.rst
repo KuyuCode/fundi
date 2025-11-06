@@ -2,35 +2,30 @@
 Scope
 *****
 
+A scope (or context) is a dictionary that provides dynamic values that may be used by dependencies.
+It should be used to provide values to dependencies through injection context. 
+For example, it may be events, requests, etc.
 
-A scope is a dictionary passed to the injector that provides runtime values to dependencies —
-especially when these values cannot or should not be declared via :code:`from_()`.
-This is implicit way to inject values. While scope-based injection is powerful,
-overuse may lead to unclear and hard-to-debug logic.
-Use it when values must come from the external runtime context —
-such as user events or app state.
+It combines concepts from both FastAPI's and Aiogram's dependency injection systems. 
+Aiogram uses parameter names to provide values to dependencies during injection,
+and FastAPI uses annotations.
+FunDI allows both parameter names and annotations to be used to fetch values 
+from context.
 
-Most suitable use case is to pass values that are generated outside of injection,
-but should be used with in it, for example - events or application state.
+  Hint: To fetch values from scope using its annotation use ``FromType[ANNOTATION]``
+
+  Use this feature with care, as it adds additional cost in computational work.
 
 Dependant's parameter with no :code:`from_(...)` as default value will be resolved from the **scope**
-
-Values from scope can be resolved either by parameter name or by parameter type.
-By default - values are resolved by parameter name. To indicate,
-that value should be resolved by type you need to use :code:`FromType[...]` as type annotation
-and pass required type to it.
-
-Depending on context, this lets you avoid name clashes and enforce clearer DI behavior.
-
-  Note: In earlier versions of FunDI to resolve parameter by type :code:`from_(...)` function was used,
-  still, it is supported, but deprecated behavior. And will be removed in future updates(or not). Thus,
-  I'd recommend to rewrite your code to use :code:`FromType[...]` type annotation
 
 Example of dependant that use value from scope:
 
 .. code-block:: python
 
     from urllib.request import Request
+
+    from fundi import scan, inject
+
 
     def require_user(request: Request) -> str:
         user = request.get_header("User")
@@ -40,13 +35,18 @@ Example of dependant that use value from scope:
 
         return user
 
+
+    inject({"request": Request(...)}, scan(require_user))
+
+
 Dependant that use value resolved by type:
 
 .. code-block:: python
 
     from urllib.request import Request
 
-    from fundi import FromType
+    from fundi import FromType, scan, inject
+
 
     def require_user(req: FromType[Request]) -> str:
         user = req.get_header("User")
@@ -57,6 +57,8 @@ Dependant that use value resolved by type:
         return user
 
 
+    inject({"request": Request(...)}, scan(require_user))
+
 .. warning::
 
     If multiple values in the scope share the same type, :code:`FromType[...]` resolution
@@ -64,4 +66,4 @@ Dependant that use value resolved by type:
 
 ..
 
-  With great scope comes great confusion. Use it wisely.
+  Avoid overusing scopes, as it can make debugging more difficult.

@@ -7,7 +7,7 @@ You made it to the final chapter. You're no longer just a user — you're a prac
 Testing is good, but debugging is what separates the script kiddie from the software monk
 
 FunDI provides useful functions to help you debug and optimize your dependency injection:
-    - :code:`tree` - Generates a tree that shows how dependencies will be resolved — including resolution order and value mapping.
+    - :code:`tree` — Generates a tree that shows how dependencies will be resolved — including resolution order and value mapping.
 
       .. code-block:: python
 
@@ -21,7 +21,7 @@ FunDI provides useful functions to help you debug and optimize your dependency i
 
       Each node contains the function being called (:code:`call`) and the values being injected into it (:code:`values`).
 
-    - :code:`order` - generates list that contains order in which dependencies will be called.
+    - :code:`order` — generates list that contains order in which dependencies will be called.
 
         Note: Result does not include function that is being passed to :code:`order` function.
 
@@ -40,18 +40,17 @@ FunDI provides useful functions to help you debug and optimize your dependency i
 
 Exceptions
 ==========
-
-During injection exception may be raised, so you need to know everything about them.
+During injection an exception may be raised, so you should understand why it happens.
 
 Scope value not found
 ---------------------
 
-If scope hadn't request by dependency value - FunDI would raise :code:`ScopeValueNotFoundError`
+If the scope does not contain the value required by a dependency — FunDI will raise :code:`ScopeValueNotFoundError`
 
 Tracing
 -------
 
-FunDI helps you understand direct cause of exceptions and place where did they happen -
+FunDI helps you understand direct cause of exceptions and place where did they happen —
 library adds its injection trace to exception.
 
 .. code-block:: python

@@ -2,15 +2,16 @@
 Dependency
 **********
 
+Dependencies are simple functions that produce results. 
+They allow you to declaratively split code into preparation and business logic.
 
-Dependencies in FunDI are simple asynchronous/synchronous functions.
-That are used to create and provide data to dependants.
-They help split code into preparation and actual work.
+By default they are called only once during injection, 
+so it guarantees no unnecessary repetition.
+This is useful when there is much to do and you don't want to pass all things inside arguments.
+This behavior may be disabled using ``caching=False`` parameter in ``from_(...)`` and ``scan(...)`` functions.
 
-  Note: By default, each dependency is evaluated only once
-  per injection cycle — subsequent uses are cached.
+  Note: disabling caching in ``from_(...)`` and ``scan(...)`` works only for specified function, not for its dependencies.
 
-  To disable this behavior use :code:`caching=False` parameter in :code:`from_(...)` and :code:`scan(...)` functions
 
 Example of dependency that generates one random name:
 
@@ -51,9 +52,9 @@ I'd recommend to give to dependency the name that actually represent what they p
 
 Prefixes are good way to tell how dependency behaves on injection. Some of the prefixes I use:
 
-- :code:`require_` - Dependency may raise error whenever something had failed
-- :code:`optional_` - Dependency may return None whenever it fails
-- :code:`acquire_` - Dependency acquires some resources. Used by `lifespan-dependencies <lifespan-dependency.html>`_
+- :code:`require_` — Dependency may raise error whenever something had failed
+- :code:`optional_` — Dependency may return None whenever it fails
+- :code:`acquire_` — Dependency acquires some resources. Used for `lifespan-dependencies <lifespan-dependency.html>`_
 
 Also, prefixes can help you to separate dependency name from the parameter name where it's result goes.
 Simplest example is :code:`admin_user` and :code:`require_admin_user`

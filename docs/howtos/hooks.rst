@@ -13,8 +13,8 @@ This may be useful to modify dependency cache key depending on the dependant's p
 
 Graph hook function is called with two positional arguments: 
 
-- ``CallableInfo`` - information about the dependency that is about to be added to a graph
-- ``Parameter`` - information about the parameter the dependency is about to be linked to
+- ``CallableInfo`` — information about the dependency that is about to be added to a graph
+- ``Parameter`` — information about the parameter the dependency is about to be linked to
 
 Graph hook **should modify** the CallableInfo passed to it. 
 It may return anything, but returned value would **not** be used.
@@ -32,8 +32,8 @@ This hook should be used to produce dependency specific scope values.
 
 Scope hook function is called with two positional arguments:
 
-- ``scope`` - string based dictionary. Hook should mutate it, to change dependency scope
-- ``CallableInfo`` - information about the dependency that is about to be injected
+- ``scope`` — string based dictionary. Hook should mutate it, to change dependency scope
+- ``CallableInfo`` — information about the dependency that is about to be injected
 
 As in **graph** hook the returned value of the scope hook would **not** be used.
 
