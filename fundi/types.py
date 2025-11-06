@@ -1,8 +1,11 @@
 import typing
 import collections
 import collections.abc
+from logging import Logger
 from typing_extensions import override
 from dataclasses import dataclass, field, replace
+
+from fundi.logging import get_logger
 
 __all__ = [
     "R",
@@ -72,6 +75,8 @@ class CallableInfo(typing.Generic[R]):
 
     side_effects: tuple["CallableInfo[typing.Any]", ...] = ()
 
+    _logger: Logger = field(default=get_logger("types.CallableInfo"), init=False, repr=False)
+
     def __post_init__(self):
         self.named_parameters = {p.name: p for p in self.parameters}
         self.key = CacheKey(self.call)
@@ -90,6 +95,14 @@ class CallableInfo(typing.Generic[R]):
         kwargs: collections.abc.MutableMapping[str, typing.Any],
         partial: bool = False,
     ) -> dict[str, typing.Any]:
+        self._logger.debug(
+            "Building %svalues for %r using arguments: arguments=(%d items) keyword=(%d items)",
+            "partial " if partial else "",
+            self.call,
+            len(args),
+            len(kwargs),
+        )
+
         values: dict[str, typing.Any] = {}
 
         args_amount = len(args)
@@ -99,26 +112,36 @@ class CallableInfo(typing.Generic[R]):
             name = parameter.name
 
             if parameter.keyword_varying:
+                self._logger.debug("Parameter **%s got value %r", name, kwargs)
                 values[name] = kwargs
                 continue
 
             if name in kwargs:
-                values[name] = kwargs.pop(name)
+                value = kwargs.pop(name)
+                self._logger.debug("Parameter %s got value %r", name, value)
+                values[name] = value
                 continue
 
             if parameter.positional_varying:
-                values[name] = args[ix:]
+                value = args[ix:]
+                self._logger.debug("Parameter *%s got value %r", name, value)
+                values[name] = value
                 ix = args_amount
                 continue
 
             if ix < args_amount:
-                values[name] = args[ix]
+                value = args[ix]
+                self._logger.debug("Parameter %s got value %r", name, value)
+                values[name] = value
                 ix += 1
                 continue
 
             if parameter.has_default:
+                self._logger.debug("Parameter %s got value (default) %r", name, parameter.default)
                 values[name] = parameter.default
                 continue
+
+            self._logger.debug("Parameter %s got no value", name)
 
             if not partial:
                 raise ValueError(f'Argument for parameter "{parameter.name}" not found')
@@ -138,6 +161,8 @@ class CallableInfo(typing.Generic[R]):
     def build_arguments(
         self, values: collections.abc.Mapping[str, typing.Any]
     ) -> tuple[tuple[typing.Any, ...], dict[str, typing.Any]]:
+        self._logger.debug("Building arguments for %r using values: %r", self.call, values)
+
         positional: tuple[typing.Any, ...] = ()
         keyword: dict[str, typing.Any] = {}
 
@@ -150,22 +175,31 @@ class CallableInfo(typing.Generic[R]):
             value = values[name]
 
             if parameter.positional_only:
+                self._logger.debug("Adding positional-only %s argument: %r", name, value)
                 positional += (value,)
             elif parameter.positional_varying:
+                self._logger.debug("Adding *%s argument: %r", name, value)
                 positional += value
             elif parameter.keyword_only:
+                self._logger.debug("Adding keyword-only %s argument: %r", name, value)
                 keyword[name] = value
             elif parameter.keyword_varying:
+                self._logger.debug("Adding **%s argument: %r", name, value)
                 keyword.update(value)
             else:
+                self._logger.debug("Adding %s argument: %r", name, value)
                 positional += (value,)
+
+        self._logger.debug("Built arguments for %r: %r %r", self.call, positional, keyword)
 
         return positional, keyword
 
     def copy(self, deep: bool = False, **update: typing.Any):
         if not deep:
+            self._logger.debug("Making shallow copy of %r", self.call)
             return replace(self, **update)
 
+        self._logger.debug("Making deep copy of %r", self.call)
         return replace(
             self,
             **{
