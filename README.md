@@ -34,4 +34,4 @@ def greet(user: str = from_(require_user)):
 inject({}, scan(greet))
 ```
 
-See the documentation to get more examples: https://fundi.readthedocs.io/en/latest/
+See the documentation to get more examples: https://fundi.readthedocs.io/en/stable/
