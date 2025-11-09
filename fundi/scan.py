@@ -213,7 +213,7 @@ def scan(
         context=context,
         graphhook=hooks.get("graph"),
         scopehook=hooks.get("scope"),
-        side_effects=tuple(_side_effects),
+        side_effects=(),
         generator=generator,
         parameters=parameters,
         return_annotation=signature.return_annotation,
@@ -226,4 +226,4 @@ def scan(
         logger.debug("Unable to cache scan result in %r", call)
         pass
 
-    return info
+    return info.copy(side_effects=tuple(_side_effects))

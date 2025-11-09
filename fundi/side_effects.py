@@ -21,14 +21,15 @@ def with_side_effects(*side_effects: Callable[..., typing.Any]) -> Callable[[C],
     """
 
     def applier(dependency: C) -> C:
-        update_cached = hasattr(dependency, "__fundi_info__")
         info = scan(dependency, side_effects=side_effects)
 
-        if update_cached:
-            try:
-                setattr(dependency, "__fundi_info__", info)
-            except (AttributeError, ValueError):
-                pass
+        # Reset cached CallableInfo
+        # This way at future scans the side effects applied
+        # here will be present in next copies
+        try:
+            setattr(dependency, "__fundi_info__", info)
+        except (AttributeError, ValueError):
+            pass
 
         return dependency
 

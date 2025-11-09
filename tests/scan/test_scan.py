@@ -5,7 +5,7 @@ from typing import Callable
 from types import TracebackType
 
 from fundi.configurable import configurable_dependency
-from fundi import scan, from_, FromType, virtual_context
+from fundi import scan, from_, FromType, virtual_context, with_side_effects
 from fundi.types import CallableInfo, DependencyConfiguration, Parameter
 
 
@@ -406,3 +406,24 @@ def test_scan_graphhook():
 
     assert parameter.from_ is not None
     assert parameter.from_.key._items == [dependency, "value"]
+
+
+def test_scan_side_effect_global():
+    @with_side_effects(lambda: None)
+    def dependency(): ...
+
+    info = scan(dependency)
+    assert info.side_effects != ()
+
+    info1 = scan(dependency)
+    assert info1.side_effects != ()
+
+
+def test_scan_side_effect_local():
+    def dependency(): ...
+
+    info = scan(dependency, side_effects=(lambda: None,))
+    assert info.side_effects != ()
+
+    info1 = scan(dependency)
+    assert info1.side_effects == ()
