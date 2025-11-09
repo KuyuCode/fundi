@@ -3,8 +3,12 @@ import contextlib
 import collections.abc
 
 from fundi.resolve import resolve
+from fundi.logging import get_logger
 from fundi.types import CacheKey, CallableInfo
 from fundi.util import call_sync, call_async, add_injection_trace
+
+injection_logger = get_logger("inject.injection")
+collection_logger = get_logger("inject.collection")
 
 
 def injection_impl(
@@ -33,7 +37,10 @@ def injection_impl(
     If any error occurs during resolution, attaches injection trace and re-raises the exception.
     """
 
+    collection_logger.debug("Collecting values for %r", info.call)
+
     if info.scopehook:
+        collection_logger.debug("Calling scope hook for %r", info.call)
         scope = dict(scope)
         info.scopehook(scope, info)
 
@@ -49,14 +56,19 @@ def injection_impl(
                     dependency is not None
                 ), "Dependency expected, got None. This is a bug, please report at https://github.com/KuyuCode/fundi"
 
+                collection_logger.debug("Passing %r upstream to be injected", dependency.call)
                 value = yield {**scope, "__fundi_parameter__": result.parameter}, dependency, True
 
                 if dependency.use_cache:
+                    collection_logger.debug(
+                        "Caching %r value using key %r", dependency.call, dependency.key
+                    )
                     cache[dependency.key] = value
 
             values[name] = value
 
         if info.side_effects:
+            collection_logger.debug("Passing %r side effects upstream to be injected", info.call)
             _values = values.copy()
             _info = info.copy(True)
             _scope = {**scope}
@@ -69,9 +81,13 @@ def injection_impl(
                     "__fundi_parameter__": None,
                 }, side_effect, True
 
+        collection_logger.debug(
+            "Passing %r with collected values %r to be called", info.call, values
+        )
         yield values, info, False
 
     except Exception as exc:
+        collection_logger.debug("Applying injection trace to %r", exc)
         add_injection_trace(exc, info, values)
         raise exc
 
@@ -99,11 +115,14 @@ def inject(
         raise RuntimeError("Cannot process async functions in synchronous injection")
 
     if stack is None:
+        injection_logger.debug("Exit stack not provided, creating own")
         with contextlib.ExitStack() as stack:
             return inject(scope, info, stack, cache, override)
 
     if cache is None:
         cache = {}
+
+    injection_logger.debug("Synchronously injecting %r", info.call)
 
     gen = injection_impl(scope, info, cache, override)
 
@@ -114,11 +133,19 @@ def inject(
             inner_scope, inner_info, more = gen.send(value)
 
             if more:
+                injection_logger.debug("Got %r from downstream: Injecting it", inner_info.call)
                 value = inject(inner_scope, inner_info, stack, cache, override)
                 continue
 
+            injection_logger.debug(
+                "Got collected values %r from downstream: Calling %r with them",
+                inner_scope,
+                inner_info.call,
+            )
+
             return call_sync(stack, inner_info, inner_scope)
     except Exception as exc:
+        injection_logger.debug("Passing exception %r (%r) to downstream", exc, type(exc))
         with contextlib.suppress(StopIteration):
             gen.throw(type(exc), exc, exc.__traceback__)
 
@@ -145,11 +172,14 @@ async def ainject(
     :return: result of callable
     """
     if stack is None:
+        injection_logger.debug("Exit stack not provided, creating own")
         async with contextlib.AsyncExitStack() as stack:
             return await ainject(scope, info, stack, cache, override)
 
     if cache is None:
         cache = {}
+
+    injection_logger.debug("Asynchronously injecting %r", info.call)
 
     gen = injection_impl(scope, info, cache, override)
 
@@ -160,14 +190,22 @@ async def ainject(
             inner_scope, inner_info, more = gen.send(value)
 
             if more:
+                injection_logger.debug("Got %r from downstream: Injecting it", inner_info.call)
                 value = await ainject(inner_scope, inner_info, stack, cache, override)
                 continue
+
+            injection_logger.debug(
+                "Got collected values %r from downstream: Calling %r with them",
+                inner_scope,
+                inner_info.call,
+            )
 
             if info.async_:
                 return await call_async(stack, inner_info, inner_scope)
 
             return call_sync(stack, inner_info, inner_scope)
     except Exception as exc:
+        injection_logger.debug("Passing exception %r (%r) to downstream", exc, type(exc))
         with contextlib.suppress(StopIteration):
             gen.throw(type(exc), exc, exc.__traceback__)
 

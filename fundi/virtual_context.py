@@ -14,9 +14,12 @@ from contextlib import AbstractAsyncContextManager, AbstractContextManager
 
 from .scan import scan
 from .types import CallableInfo
+from fundi.logging import get_logger
 from .exceptions import GeneratorExitedTooEarly
 
 __all__ = ["VirtualContextProvider", "AsyncVirtualContextProvider", "virtual_context"]
+
+logger = get_logger("virtual_context")
 
 T = typing.TypeVar("T")
 P = typing.ParamSpec("P")
@@ -35,6 +38,7 @@ class _VirtualContextManager(typing.Generic[T], AbstractContextManager[T]):
 
     def __enter__(self) -> T:  # pyright: ignore[reportMissingSuperCall, reportImplicitOverride]
         try:
+            logger.debug("Entering %r", self.origin)
             return self.generator.send(None)
         except StopIteration as exc:
             raise GeneratorExitedTooEarly(self.origin, self.generator) from exc
@@ -47,18 +51,32 @@ class _VirtualContextManager(typing.Generic[T], AbstractContextManager[T]):
     ) -> bool:
         try:
             if exc_type is not None:
+                logger.debug(
+                    "Raising %s in %r: %r",
+                    exc_type.__name__ if exc_type else "Unknown",
+                    self.origin,
+                    exc_value,
+                )
                 self.generator.throw(exc_type, exc_value, traceback)
             else:
+                logger.debug("Exiting %r", self.origin)
                 self.generator.send(None)
         except StopIteration:
-            pass
+            logger.debug("Generator %r exited cleanly", self.origin)
         except Exception as exc:
             if exc is exc_value:
+                logger.debug(
+                    "Generator created by %r re-raised exception %r, suppressing traceback",
+                    self.origin,
+                    exc_type,
+                )
                 return False
 
             raise exc
         else:
+            logger.warning("Generator %r did not exit properly", self.origin)
             warnings.warn("Generator not exited", UserWarning)
+
         return False
 
 
@@ -74,6 +92,7 @@ class _VirtualAsyncContextManager(typing.Generic[T], AbstractAsyncContextManager
 
     async def __aenter__(self) -> T:  # pyright: ignore[reportImplicitOverride]
         try:
+            logger.debug("Entering %r", self.origin)
             return await self.generator.asend(None)
         except StopAsyncIteration as exc:
             raise GeneratorExitedTooEarly(self.origin, self.generator) from exc
@@ -88,18 +107,32 @@ class _VirtualAsyncContextManager(typing.Generic[T], AbstractAsyncContextManager
 
         try:
             if exc_type is not None:
+                logger.debug(
+                    "Raising %s in %r: %r",
+                    exc_type.__name__ if exc_type else "Unknown",
+                    self.origin,
+                    exc_value,
+                )
                 await self.generator.athrow(exc_type, exc_value, traceback)
             else:
+                logger.debug("Exiting %r", self.origin)
                 await self.generator.asend(None)
         except StopAsyncIteration:
-            pass
+            logger.debug("Generator %r exited cleanly", self.origin)
         except Exception as exc:
             if exc is exc_value:
+                logger.debug(
+                    "Generator created by %r re-raised exception %r, suppressing traceback",
+                    self.origin,
+                    exc_type,
+                )
                 return False
 
             raise exc
         else:
+            logger.warning("Generator %r did not exit properly", self.origin)
             warnings.warn("Generator not exited", UserWarning)
+
         return False
 
 
@@ -116,6 +149,7 @@ class VirtualContextProvider(typing.Generic[T, P]):
         self.__wrapped__: typing.Callable[P, Generator[T, None, None]] = function
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs):
+        logger.debug("Creating virtual context manager for %r", self.__wrapped__)
         return _VirtualContextManager(self.__wrapped__(*args, **kwargs), self.__wrapped__)
 
 
@@ -132,6 +166,7 @@ class AsyncVirtualContextProvider(typing.Generic[T, P]):
         self.__wrapped__: typing.Callable[P, AsyncGenerator[T]] = function
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs):
+        logger.debug("Creating virtual context manager for %r", self.__wrapped__)
         return _VirtualAsyncContextManager(self.__wrapped__(*args, **kwargs), self.__wrapped__)
 
 

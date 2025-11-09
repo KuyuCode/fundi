@@ -4,11 +4,16 @@ from types import BuiltinFunctionType, FunctionType, MethodType
 from collections.abc import AsyncGenerator, Awaitable, Generator
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 
+from fundi.logging import get_logger
 from fundi.types import R, CallableInfo, Parameter, TypeResolver
 from fundi.util import is_configured, get_configuration, normalize_annotation
 
+logger = get_logger("scan")
+
 
 def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
+    logger.debug("Transforming parameter %r into FunDI parameter", parameter.name)
+
     positional_varying = parameter.kind == inspect.Parameter.VAR_POSITIONAL
     positional_only = parameter.kind == inspect.Parameter.POSITIONAL_ONLY
     keyword_varying = parameter.kind == inspect.Parameter.VAR_KEYWORD
@@ -20,11 +25,13 @@ def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
     resolve_by_type = False
 
     if isinstance(default, CallableInfo):
+        logger.debug("Parameter %r is a dependency definition", parameter.name)
         has_default = False
         from_ = typing.cast(CallableInfo[typing.Any], default)
 
     annotation = parameter.annotation
     if isinstance(annotation, TypeResolver):
+        logger.debug("Parameter %r marked to resolve by type via TypeResolver", parameter.name)
         annotation = annotation.annotation
         resolve_by_type = True
 
@@ -33,11 +40,13 @@ def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
 
         if TypeResolver in args:
             resolve_by_type = True
+            logger.debug("Parameter %r marked to resolve by type via FromType", parameter.name)
         else:
             presence: tuple[CallableInfo[typing.Any]] | tuple[()] = tuple(
                 filter(lambda x: isinstance(x, CallableInfo), args)
             )
             if presence:
+                logger.debug("Parameter %r is a dependency definition", parameter.name)
                 from_ = presence[0]
 
     parameter_ = Parameter(
@@ -54,6 +63,9 @@ def _transform_parameter(parameter: inspect.Parameter) -> Parameter:
     )
 
     if from_ is not None and from_.graphhook is not None:
+        logger.debug(
+            "Calling graph hook defined for %r on parameter %r", from_.call, parameter.name
+        )
         from_copy = from_.copy(deep=True)
         from_.graphhook(from_copy, parameter_.copy())
 
@@ -99,11 +111,21 @@ def scan(
 
     :return: callable information
     """
+    logger.debug(
+        "Scanning %r (async=%s, generator=%s, context=%s, caching=%s)",
+        call,
+        async_,
+        generator,
+        context,
+        caching,
+    )
+
     _side_effects: list[CallableInfo[typing.Any]] = []
     for side_effect in side_effects:
         _side_effects.append(scan(side_effect))
 
     if hasattr(call, "__fundi_info__"):
+        logger.debug("Reusing cached CallableInfo for %r", call)
         info = typing.cast(CallableInfo[typing.Any], getattr(call, "__fundi_info__"))
 
         overrides: dict[str, typing.Any] = {"use_cache": caching}
@@ -124,6 +146,12 @@ def scan(
                 _side_effects.append(side_effect)
 
             overrides["side_effects"] = tuple(_side_effects)
+
+        logger.debug(
+            "Overriding cached CallableInfo for %r with values: %r",
+            call,
+            list(overrides.keys()),
+        )
 
         return info.copy(**overrides)
 
@@ -195,6 +223,7 @@ def scan(
     try:
         setattr(call, "__fundi_info__", info)
     except (AttributeError, TypeError):
+        logger.debug("Unable to cache scan result in %r", call)
         pass
 
     return info
