@@ -17,7 +17,7 @@ keywords:
   - functional programming
   - dependency injection
   - fundi
-license: GPL-3.0
-commit: a3eb7c8ce975ba25e7fb32976b89b2fc06a2d012
-version: 1.3.7
+license: LGPL-3.0
+commit: bca6f9b886da89d52493d3ccf3142418d063ce7e
+version: 1.5.0
 date-released: '2025-10-10'
