@@ -8,6 +8,7 @@ from .hooks import with_hooks
 from .debug import tree, order
 from .inject import inject, ainject
 from .side_effects import with_side_effects
+from .injection_context import InjectionContext, AsyncInjectionContext
 from .configurable import configurable_dependency, MutableConfigurationWarning
 from .virtual_context import virtual_context, VirtualContextProvider, AsyncVirtualContextProvider
 from .types import CallableInfo, TypeResolver, InjectionTrace, R, Parameter, DependencyConfiguration
@@ -42,9 +43,11 @@ __all__ = [
     "InjectionTrace",
     "virtual_context",
     "injection_trace",
+    "InjectionContext",
     "with_side_effects",
     "get_configuration",
     "normalize_annotation",
+    "AsyncInjectionContext",
     "VirtualContextProvider",
     "DependencyConfiguration",
     "configurable_dependency",

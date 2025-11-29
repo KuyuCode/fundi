@@ -4,26 +4,26 @@ between multiple injections.
 
 Example::
 
-with InjectionContext({"global": 10}) as ctx:
-    ctx.inject(scan(lambda global: print(global))) # 10
-    ctx.scope["global"] = 20 # update context scope
+    with InjectionContext({"global_": 10}) as ctx:
+        ctx.inject(scan(lambda global_: print(global_))) # 10
+        ctx.scope["global_"] = 20 # update context scope
 
-    # Create sub context which will be closed automatically with parent
-    sub = ctx.sub()
-    sub.inject(scan(lambda global: print(global))) # 20
+        # Create sub context which will be closed automatically with parent
+        sub = ctx.sub()
+        sub.inject(scan(lambda global_: print(global_))) # 20
 
-    # Injection nesting
-    def dependant(sub: FromType[InjectionContext]):
-        # context passed into dependencies is the sub context of the context
-        # it was called with
-        assert sub != ctx
-        sub.inject(scan(another_dependant))
+        # Injection nesting
+        def dependant(sub: FromType[InjectionContext]):
+            # context passed into dependencies is the sub context of the context
+            # it was called with
+            assert sub != ctx
+            sub.inject(scan(another_dependant))
 
-    ctx.inject(scan(dependant))
+        ctx.inject(scan(dependant))
 
-    # Create context copy, it will not be closed automatically
-    with ctx.copy() as copy:
-        inject(scan(lambda global: print(global))) # 20
+        # Create context copy, it will not be closed automatically
+        with ctx.copy() as copy:
+            inject(scan(lambda global_: print(global_))) # 20
 """
 
 import typing
@@ -31,8 +31,8 @@ from types import TracebackType
 from contextlib import AsyncExitStack, ExitStack
 from collections.abc import Mapping, MutableMapping
 
-from fundi.types import CacheKey
-from fundi import CallableInfo, ainject, inject
+from .inject import ainject, inject
+from .types import CacheKey, CallableInfo
 
 
 class InjectionContext:
