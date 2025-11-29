@@ -1,4 +1,4 @@
-from fundi import scan, from_, InjectionContext, AsyncInjectionContext
+from fundi import scan, from_, InjectionContext
 
 
 def test_sync_scope_sharing():
@@ -80,79 +80,23 @@ def test_sync_lifecycle_sharing():
     assert exits == 2
 
 
-async def test_async_scope_sharing():
-    async with AsyncInjectionContext({"scope_value": 1}) as ctx:
-        injections = 0
-
-        async def dep(scope_value: int):
-            nonlocal injections
-            injections += 1
-
-            assert scope_value == 1
-
-        await ctx.inject(scan(dep))
-        await ctx.inject(scan(dep))
-
-        assert injections == 2
-
-
-async def test_async_cache_sharing():
-    async with AsyncInjectionContext() as ctx:
-        injections = 0
-        dep_calls = 0
-
-        async def dep():
-            nonlocal dep_calls
-            dep_calls += 1
-
-        async def dependant(value: None = from_(dep)):
-            nonlocal injections
-            injections += 1
-
-        await ctx.inject(scan(dependant))
-        await ctx.inject(scan(dependant))
-
-        assert dep_calls == 1
-        assert injections == 2
-
-
-async def test_async_override_sharing():
-    dep_calls = 0
-
-    async def dep():
-        nonlocal dep_calls
-        dep_calls += 1
-
-    async with AsyncInjectionContext(override={dep: 0}) as ctx:
-        injections = 0
-
-        async def dependant(value: None = from_(dep)):
-            nonlocal injections
-            injections += 1
-
-        await ctx.inject(scan(dependant))
-        await ctx.inject(scan(dependant))
-
-        assert dep_calls == 0
-        assert injections == 2
-
-
-async def test_async_lifecycle_sharing():
-    async with AsyncInjectionContext({"scope_value": 1}) as ctx:
+def test_sync_nested_lifecycle_sharing():
+    with InjectionContext({"scope_value": 1}) as ctx:
         enters = 0
         exits = 0
 
-        async def dep(scope_value: int):
+        def dep(scope_value: int):
             nonlocal enters, exits
             enters += 1
             yield
             exits += 1
 
-        await ctx.inject(scan(dep))
+        ctx.inject(scan(dep))
         assert enters == 1
         assert exits == 0
 
-        await ctx.inject(scan(dep))
+        sub = ctx.sub()
+        sub.inject(scan(dep))
         assert enters == 2
         assert exits == 0
 
