@@ -26,6 +26,7 @@ dev = [
     "pynvim>=0.5.2",
     "pytest>=8.3.5",
     "pytest-asyncio>=0.26.0",
+    "ruff>=0.14.10",
     { include-group = "docs" },
 ]
 
@@ -52,3 +53,12 @@ ignore = ["tests"]
 [tool.black]
 line-length=100
 
+[tool.ty.src]
+respect-ignore-files = false
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint.isort]
+# It sorts by module name length, not the line length, and thats horrible
+length-sort = true
