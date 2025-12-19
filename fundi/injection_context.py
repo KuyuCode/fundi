@@ -28,6 +28,7 @@ Example::
 
 import typing
 from types import TracebackType
+from typing_extensions import Self
 from contextlib import AsyncExitStack, ExitStack
 from collections.abc import Mapping, MutableMapping
 
@@ -76,7 +77,7 @@ class InjectionContext:
         scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
-    ):
+    ) -> "InjectionContext":
 
         return self.stack.enter_context(self.copy(scope, override, no_cache))
 
@@ -85,7 +86,7 @@ class InjectionContext:
         scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
-    ):
+    ) -> "InjectionContext":
         scope = scope or {}
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else {**self.cache}
@@ -95,7 +96,7 @@ class InjectionContext:
     def close(self):
         self.stack.close()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.stack.__enter__()
         return self
 
@@ -148,8 +149,7 @@ class AsyncInjectionContext:
         scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
-    ):
-
+    ) -> "AsyncInjectionContext":
         return await self.stack.enter_async_context(self.copy(scope, override, no_cache))
 
     def copy(
@@ -157,17 +157,17 @@ class AsyncInjectionContext:
         scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
-    ):
+    ) -> "AsyncInjectionContext":
         scope = scope or {}
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else {**self.cache}
 
         return AsyncInjectionContext({**self.scope, **scope}, cache, {**self.override, **override})
 
-    async def close(self):
+    async def close(self) -> None:
         await self.stack.aclose()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         await self.stack.__aenter__()
         return self
 
@@ -176,5 +176,5 @@ class AsyncInjectionContext:
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         traceback: TracebackType | None,
-    ):
+    ) -> bool | None:
         return await self.stack.__aexit__(exc_type, exc_value, traceback)

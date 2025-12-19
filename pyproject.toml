@@ -52,3 +52,11 @@ ignore = ["tests"]
 [tool.black]
 line-length=100
 
+[tool.ty.src]
+respect-ignore-files = false
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint.isort]
+length-sort = true

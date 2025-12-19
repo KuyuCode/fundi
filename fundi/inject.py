@@ -73,13 +73,17 @@ def injection_impl(
             _info = info.copy(True)
             _scope = {**scope}
             for side_effect in info.side_effects:
-                yield {
-                    **scope,
-                    "__values__": _values,
-                    "__dependant__": _info,
-                    "__scope__": _scope,
-                    "__fundi_parameter__": None,
-                }, side_effect, True
+                yield (
+                    {
+                        **scope,
+                        "__values__": _values,
+                        "__dependant__": _info,
+                        "__scope__": _scope,
+                        "__fundi_parameter__": None,
+                    },
+                    side_effect,
+                    True,
+                )
 
         collection_logger.debug(
             "Passing %r with collected values %r to be called", info.call, values
