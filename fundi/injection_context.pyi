@@ -60,7 +60,7 @@ class InjectionContext:
     def inject(
         self,
         info: CallableInfo[Generator[R, None, None]],
-        cache: MutableMapping[CacheKey, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
@@ -68,7 +68,7 @@ class InjectionContext:
     def inject(
         self,
         info: CallableInfo[AbstractContextManager[R]],
-        cache: MutableMapping[CacheKey, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
@@ -76,7 +76,7 @@ class InjectionContext:
     def inject(
         self,
         info: CallableInfo[R],
-        cache: MutableMapping[CacheKey, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
@@ -124,6 +124,7 @@ class AsyncInjectionContext:
     async def inject(
         self,
         info: CallableInfo[Generator[R, None, None]],
+        scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
@@ -131,6 +132,7 @@ class AsyncInjectionContext:
     async def inject(
         self,
         info: CallableInfo[AsyncGenerator[R, None]],
+        scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
@@ -138,6 +140,7 @@ class AsyncInjectionContext:
     async def inject(
         self,
         info: CallableInfo[Awaitable[R]],
+        scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
@@ -145,6 +148,7 @@ class AsyncInjectionContext:
     async def inject(
         self,
         info: CallableInfo[AbstractAsyncContextManager[R]],
+        scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
@@ -152,12 +156,14 @@ class AsyncInjectionContext:
     async def inject(
         self,
         info: CallableInfo[AbstractContextManager[R]],
+        scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
     async def inject(
         self,
         info: CallableInfo[R],
+        scope: Mapping[str, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
