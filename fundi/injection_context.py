@@ -37,6 +37,11 @@ from .types import CacheKey, CallableInfo
 
 
 class InjectionContext:
+    """
+    Synchronous injection context.
+    Allows only synchronous dependencies of all kinds to be injected.
+    """
+
     def __init__(
         self,
         scope: Mapping[str, typing.Any] | None = None,
@@ -60,6 +65,20 @@ class InjectionContext:
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ):
+        """
+        Inject dependency within injection context.
+        This function uses scope, cache, stack and overrides defined in the context.
+
+        Scope is modified before injection.
+        It is merged with provided scope via argument
+        and ``{'__fundi_injection_context__': self.sub()}``
+
+        Overrides are also merged with provided
+        ``override`` argument before injection.
+
+        If ``no_cache`` is ``True`` then - cache is not used.
+        This includes reads and writes to cache.
+        """
         scope = scope or {}
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else self.cache
@@ -78,7 +97,17 @@ class InjectionContext:
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "InjectionContext":
+        """
+        Create copy of this injection context and
+        connect it to the lifecycle of this context.
 
+        Scope is merged with provided ``scope`` argument.
+
+        Overrides are also merged with provided
+        ``override`` argument.
+
+        If ``no_cache`` is ``True`` then - cache is not copied.
+        """
         return self.stack.enter_context(self.copy(scope, override, no_cache))
 
     def copy(
@@ -87,6 +116,16 @@ class InjectionContext:
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "InjectionContext":
+        """
+        Create copy of this injection context.
+
+        Scope is merged with provided ``scope`` argument.
+
+        Overrides are also merged with provided
+        ``override`` argument.
+
+        If ``no_cache`` is ``True`` then - cache is not copied.
+        """
         scope = scope or {}
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else {**self.cache}
@@ -94,9 +133,16 @@ class InjectionContext:
         return InjectionContext({**self.scope, **scope}, cache, {**self.override, **override})
 
     def close(self):
+        """
+        End lifecycle of this injection context
+        """
         self.stack.close()
 
     def __enter__(self) -> Self:
+        """
+        Start lifecycle of this injection context.
+        Does nothing, as ``AsyncExitStack.__aenter__`` is empty. (CPython 3.10-3.14)
+        """
         self.stack.__enter__()
         return self
 
@@ -106,10 +152,22 @@ class InjectionContext:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ):
+        """
+        End lifecycle of this injection context.
+        this closes all pending lifespan-dependencies.
+
+        If context-manager is closing due to exception -
+        exceptions are raised inside pending dependencies.
+        """
         return self.stack.__exit__(exc_type, exc_value, traceback)
 
 
 class AsyncInjectionContext:
+    """
+    Synchronous injection context.
+    Allows both synchronous and asynchronous dependencies of all kinds to be injected.
+    """
+
     def __init__(
         self,
         scope: Mapping[str, typing.Any] | None = None,
@@ -133,6 +191,20 @@ class AsyncInjectionContext:
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ):
+        """
+        Inject dependency within injection context.
+        This function uses scope, cache, stack and overrides defined in the context.
+
+        Scope is modified before injection.
+        It is merged with provided scope via argument
+        and ``{'__fundi_injection_context__': self.sub()}``
+
+        Overrides are also merged with provided
+        ``override`` argument before injection.
+
+        If ``no_cache`` is ``True`` then - cache is not used.
+        This includes reads and writes to cache.
+        """
         scope = scope or {}
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else self.cache
@@ -150,6 +222,17 @@ class AsyncInjectionContext:
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "AsyncInjectionContext":
+        """
+        Create copy of this injection context and
+        connect it to the lifecycle of this context.
+
+        Scope is merged with provided ``scope`` argument.
+
+        Overrides are also merged with provided
+        ``override`` argument.
+
+        If ``no_cache`` is ``True`` then - cache is not copied.
+        """
         return await self.stack.enter_async_context(self.copy(scope, override, no_cache))
 
     def copy(
@@ -158,6 +241,16 @@ class AsyncInjectionContext:
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "AsyncInjectionContext":
+        """
+        Create copy of this injection context.
+
+        Scope is merged with provided ``scope`` argument.
+
+        Overrides are also merged with provided
+        ``override`` argument.
+
+        If ``no_cache`` is ``True`` then - cache is not copied.
+        """
         scope = scope or {}
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else {**self.cache}
@@ -165,9 +258,16 @@ class AsyncInjectionContext:
         return AsyncInjectionContext({**self.scope, **scope}, cache, {**self.override, **override})
 
     async def close(self) -> None:
+        """
+        End lifecycle of this injection context
+        """
         await self.stack.aclose()
 
     async def __aenter__(self) -> Self:
+        """
+        Start lifecycle of this injection context.
+        Does nothing, as ``AsyncExitStack.__aenter__`` is empty. (CPython 3.10-3.14)
+        """
         await self.stack.__aenter__()
         return self
 
@@ -177,4 +277,11 @@ class AsyncInjectionContext:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool | None:
+        """
+        End lifecycle of this injection context.
+        this closes all pending lifespan-dependencies.
+
+        If context-manager is closing due to exception -
+        exceptions are raised inside pending dependencies.
+        """
         return await self.stack.__aexit__(exc_type, exc_value, traceback)
