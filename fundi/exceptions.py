@@ -24,3 +24,14 @@ class GeneratorExitedTooEarly(Exception):
         super().__init__(f"Generator exited too early")
         self.function: FunctionType = function
         self.generator: AsyncGenerator[typing.Any] | Generator[typing.Any, None, None] = generator
+
+
+class InvalidInitialValue(ValueError):
+    """
+    Initial value passed to the ``Scope`` constructor is invalid
+    """
+
+    def __init__(self, value: typing.Any):
+        super().__init__(
+            f"Initial value is invalid: got {value!r}, but ``TypeFactory`` or ``TypeInstance`` expected"
+        )
