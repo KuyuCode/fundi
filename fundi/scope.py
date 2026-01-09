@@ -2,6 +2,7 @@ import typing
 from dataclasses import dataclass
 
 from fundi import CallableInfo, scan
+from typing_extensions import NewType, overload, override
 from fundi.exceptions import InvalidInitialValue
 
 
@@ -56,7 +57,7 @@ class Scope:
     Also, allows to create type factories - functions that create instances of the type.
     """
 
-    def __init__(self, initial: dict[str | type, typing.Any] | None = None):
+    def __init__(self, initial: dict[str | type | NewType, typing.Any] | None = None):
         """
         Create the Scope.
 
@@ -69,8 +70,8 @@ class Scope:
         initial = initial or {}
 
         self.values: dict[str, typing.Any] = {}
-        self.types: dict[type, typing.Any] = {}
-        self.factories: dict[type, CallableInfo[typing.Any]] = {}
+        self.types: dict[type | NewType, typing.Any] = {}
+        self.factories: dict[type | NewType, CallableInfo[typing.Any]] = {}
 
         for key, value in initial.items():
             if isinstance(key, str):
@@ -127,7 +128,7 @@ class Scope:
                 self.types[type_] = instance
             return None
 
-        elif isinstance(type_or_instance, type):
+        elif isinstance(type_or_instance, (type, NewType)):
             type_ = type_or_instance
             instance = instance
 
@@ -140,6 +141,14 @@ class Scope:
             for type_ in type_.mro()[1:-1]:
                 self.types[type_] = instance
 
+    @overload
+    def add_factory(
+        self, type_: NewType | tuple[type[T], ...], factory: typing.Callable[..., T]
+    ) -> None: ...
+    @overload
+    def add_factory(
+        self, type_: type[T] | tuple[type[T], ...], factory: typing.Callable[..., T]
+    ) -> None: ...
     def add_factory(
         self, type_: type[T] | tuple[type[T], ...], factory: typing.Callable[..., T]
     ) -> None:
@@ -167,9 +176,17 @@ class Scope:
         """
         return self.values.get(key, default)
 
+    @overload
+    def resolve_by_type(
+        self, type_: NewType, default: T | NoValue = NO_VALUE
+    ) -> TypeInstance[typing.Any] | TypeFactory[typing.Any] | T | NoValue: ...
+    @overload
     def resolve_by_type(
         self, type_: type[T], default: T | NoValue = NO_VALUE
-    ) -> TypeInstance[T] | TypeFactory[T] | T | NoValue:
+    ) -> TypeInstance[T] | TypeFactory[T] | NoValue: ...
+    def resolve_by_type(
+        self, type_: type[T] | NewType, default: T | NoValue = NO_VALUE
+    ) -> typing.Any:
         """
         Resolves value or factory by the provided type.
 
@@ -199,3 +216,7 @@ class Scope:
             initial[type(value)] = TypeInstance(value)
 
         return cls(initial)
+
+    @override
+    def __str__(self):
+        return f"Scope{{named={len(self.values)}, by_type={len(self.types)}, factories={len(self.factories)}}}"
