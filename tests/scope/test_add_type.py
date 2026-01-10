@@ -1,4 +1,5 @@
-from typing import NewType
+from typing_extensions import NewType
+
 from fundi.scope import Scope
 
 
@@ -34,6 +35,7 @@ def test_alias():
         pass
 
     Actor = NewType("Actor", User)
+    print(Actor, type(Actor))
 
     user = User()
 
