@@ -208,18 +208,26 @@ class Scope:
         Merges two scopes together and returns the result as the new Scope instance
         """
         initial = {}
-        initial.update(
+        initial.update(self.simplify())
+        initial.update(other.simplify())
+
+        return Scope(initial)
+
+    def copy(self) -> "Scope":
+        """
+        Make a copy of this scope
+        """
+        return Scope(self.simplify())
+
+    def simplify(self):
+        """
+        Return simple representation of this scope that can be used in the Scope constructor
+        """
+        return (
             self.values
             | {t: TypeInstance(ti) for t, ti in self.types.items()}
             | {t: TypeFactory(f) for t, f in self.factories.items()}
         )
-        initial.update(
-            other.values
-            | {t: TypeInstance(ti) for t, ti in other.types.items()}
-            | {t: TypeFactory(f) for t, f in other.factories.items()}
-        )
-
-        return Scope(initial)
 
     @classmethod
     def from_legacy(cls: type[T], scope: dict[str, typing.Any]) -> T:
