@@ -22,7 +22,7 @@ def tree(
     :return: Tree of dependencies
     """
     if not isinstance(scope, Scope):
-        scope = Scope({**scope})
+        scope = Scope.from_legacy(scope)
 
     if cache is None:
         cache = {}
@@ -55,7 +55,7 @@ def order(
     :return: order of dependencies
     """
     if not isinstance(scope, Scope):
-        scope = Scope({**scope})
+        scope = Scope.from_legacy(scope)
 
     if cache is None:
         cache = {}
