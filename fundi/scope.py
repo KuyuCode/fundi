@@ -1,9 +1,10 @@
-from collections.abc import Mapping
 import typing
 from dataclasses import dataclass
+from collections.abc import Mapping
+
+from typing_extensions import NewType, overload, override
 
 from fundi import scan
-from typing_extensions import NewType, overload, override
 from fundi.exceptions import InvalidInitialValue
 
 if typing.TYPE_CHECKING:
@@ -267,7 +268,7 @@ class Scope:
         )
 
     @classmethod
-    def from_legacy(cls: type[T], scope: dict[str, typing.Any]) -> T:
+    def from_legacy(cls: type[T], scope: Mapping[str, typing.Any]) -> T:
         initial: dict[str | type, typing.Any] = {}
 
         for key, value in scope.items():

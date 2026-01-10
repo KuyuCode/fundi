@@ -122,7 +122,7 @@ def inject(
         raise RuntimeError("Cannot process async functions in synchronous injection")
 
     if not isinstance(scope, Scope):
-        scope = Scope({**scope})
+        scope = Scope.from_legacy(scope)
 
     if stack is None:
         injection_logger.debug("Exit stack not provided, creating own")
@@ -182,7 +182,7 @@ async def ainject(
     :return: result of callable
     """
     if not isinstance(scope, Scope):
-        scope = Scope({**scope})
+        scope = Scope.from_legacy(scope)
 
     if stack is None:
         injection_logger.debug("Exit stack not provided, creating own")
