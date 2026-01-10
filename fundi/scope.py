@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 import typing
 from dataclasses import dataclass
 
@@ -169,6 +170,39 @@ class Scope:
             return
 
         self.factories[type_] = scan(factory)
+
+    def update(
+        self,
+        mapping: (
+            Mapping[
+                str | type | NewType,
+                TypeInstance[typing.Any] | TypeFactory[typing.Any] | typing.Any,
+            ]
+            | None
+        ) = None,
+        **values: typing.Any,
+    ):
+        """
+        Update this scope with provided values.
+
+        ``mapping`` argument can be used to add multiple factories and type instances at a time.
+        And ``values`` argument can be used only for string based values.
+        """
+        self.values.update(values)
+
+        if mapping is None:
+            return None
+
+        for key, value in mapping.items():
+            if isinstance(key, str):
+                self.values[key] = value
+                continue
+
+            match value:
+                case TypeInstance(value):
+                    self.types[key] = value
+                case TypeFactory(factory):
+                    self.factories[key] = factory
 
     def resolve_by_name(self, key: str, *, default: typing.Any = NO_VALUE) -> typing.Any | NoValue:
         """
