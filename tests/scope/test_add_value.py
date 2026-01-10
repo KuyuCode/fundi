@@ -8,3 +8,13 @@ def test_default():
     assert scope.values == {"name": "Kuyugama"}
 
     assert scope.resolve_by_name("name") == "Kuyugama"
+
+
+def test_replace():
+    scope = Scope({"name": "Kuyu"})
+
+    assert scope.add_value("name", "Kuyugama")
+
+    assert scope.values == {"name": "Kuyugama"}
+
+    assert scope.resolve_by_name("name") == "Kuyugama"
