@@ -1,3 +1,4 @@
+from fundi.scope import Scope, NO_VALUE, TypeInstance, TypeFactory
 import typing
 import collections.abc
 
@@ -40,25 +41,29 @@ def resolve_by_dependency(
     return ParameterResult(param, None, dependency, resolved=False)
 
 
-def resolve_by_type(
-    scope: collections.abc.Mapping[str, typing.Any], param: Parameter
-) -> ParameterResult:
+def resolve_by_type(scope: Scope, param: Parameter) -> ParameterResult:
     logger.debug("Resolving %r using annotation %r", param.name, param.annotation)
     type_options = normalize_annotation(param.annotation)
 
-    for value in scope.values():
-        if not isinstance(value, type_options):
+    for type_ in type_options:
+        value = scope.resolve_by_type(typing.cast(type[typing.Any], type_))
+
+        if value is NO_VALUE:
             continue
 
         logger.debug("Found value %r for %r: Annotation", value, param.name)
 
-        return ParameterResult(param, value, None, resolved=True)
+        match value:
+            case TypeInstance(value):
+                return ParameterResult(param, value, None, resolved=True)
+            case TypeFactory(factory):
+                return ParameterResult(param, None, factory, False)
 
     return ParameterResult(param, None, None, resolved=False)
 
 
 def resolve(
-    scope: collections.abc.Mapping[str, typing.Any],
+    scope: Scope,
     info: CallableInfo[typing.Any],
     cache: collections.abc.Mapping[CacheKey, typing.Any],
     override: collections.abc.Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
@@ -102,12 +107,11 @@ def resolve(
         if parameter.resolve_by_type:
             result = resolve_by_type(scope, parameter)
 
-            if result.resolved:
+            if result.resolved or result.dependency is not None:
                 yield result
                 continue
 
-        elif parameter.name in scope:
-            value = scope[parameter.name]
+        elif (value := scope.resolve_by_name(parameter.name)) is not NO_VALUE:
             logger.debug("Found value %r for %r: Name", value, parameter.name)
             yield ParameterResult(parameter, value, None, resolved=True)
             continue

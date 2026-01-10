@@ -1,12 +1,13 @@
 import typing
 import collections.abc
 
+from fundi.scope import Scope
 from fundi.inject import injection_impl
 from fundi.types import CacheKey, CallableInfo
 
 
 def tree(
-    scope: collections.abc.Mapping[str, typing.Any],
+    scope: collections.abc.Mapping[str, typing.Any] | Scope,
     info: CallableInfo[typing.Any],
     cache: (
         collections.abc.MutableMapping[CacheKey, collections.abc.Mapping[str, typing.Any]] | None
@@ -20,6 +21,9 @@ def tree(
     :param cache: tree generation cache
     :return: Tree of dependencies
     """
+    if not isinstance(scope, Scope):
+        scope = Scope({**scope})
+
     if cache is None:
         cache = {}
 
@@ -36,7 +40,7 @@ def tree(
 
 
 def order(
-    scope: collections.abc.Mapping[str, typing.Any],
+    scope: collections.abc.Mapping[str, typing.Any] | Scope,
     info: CallableInfo[typing.Any],
     cache: (
         collections.abc.MutableMapping[CacheKey, list[typing.Callable[..., typing.Any]]] | None
@@ -50,6 +54,9 @@ def order(
     :param cache: solvation cache
     :return: order of dependencies
     """
+    if not isinstance(scope, Scope):
+        scope = Scope({**scope})
+
     if cache is None:
         cache = {}
 

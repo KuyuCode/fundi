@@ -1,9 +1,12 @@
 import typing
 from dataclasses import dataclass
 
-from fundi import CallableInfo, scan
+from fundi import scan
 from typing_extensions import NewType, overload, override
 from fundi.exceptions import InvalidInitialValue
+
+if typing.TYPE_CHECKING:
+    from fundi import CallableInfo
 
 
 class NoValue:
@@ -36,7 +39,7 @@ T = typing.TypeVar("T")
 class TypeFactory(typing.Generic[T]):
     """Marker type. Should be used to determine whether this value is a factory or instance of the type"""
 
-    factory: CallableInfo[T]
+    factory: "CallableInfo[T]"
 
 
 @dataclass
@@ -71,7 +74,7 @@ class Scope:
 
         self.values: dict[str, typing.Any] = {}
         self.types: dict[type | NewType, typing.Any] = {}
-        self.factories: dict[type | NewType, CallableInfo[typing.Any]] = {}
+        self.factories: dict[type | NewType, "CallableInfo[typing.Any]"] = {}
 
         for key, value in initial.items():
             if isinstance(key, str):
@@ -185,8 +188,8 @@ class Scope:
         self, type_: type[T], default: T | NoValue = NO_VALUE
     ) -> TypeInstance[T] | TypeFactory[T] | NoValue: ...
     def resolve_by_type(
-        self, type_: type[T] | NewType, default: T | NoValue = NO_VALUE
-    ) -> typing.Any:
+        self, type_: typing.Any, default: typing.Any = NO_VALUE
+    ) -> TypeInstance[typing.Any] | TypeFactory[typing.Any] | NoValue | typing.Any:
         """
         Resolves value or factory by the provided type.
 
