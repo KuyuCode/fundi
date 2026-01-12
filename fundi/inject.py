@@ -6,7 +6,7 @@ from fundi.scope import Scope
 from fundi.resolve import resolve
 from fundi.logging import get_logger
 from fundi.types import CacheKey, CallableInfo
-from fundi.util import call_sync, call_async, add_injection_trace
+from fundi.util import call_sync, call_async, add_injection_trace, callable_str
 
 injection_logger = get_logger("inject.injection")
 collection_logger = get_logger("inject.collection")
@@ -119,7 +119,11 @@ def inject(
     :return: result of callable
     """
     if info.async_:
-        raise RuntimeError("Cannot process async functions in synchronous injection")
+        raise RuntimeError(
+            "Cannot process async functions ({func}) in synchronous injection".format(
+                func=callable_str(info.call)
+            )
+        )
 
     if not isinstance(scope, Scope):
         scope = Scope.from_legacy(scope)
