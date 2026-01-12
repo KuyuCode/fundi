@@ -3,7 +3,7 @@ import typing
 import collections.abc
 
 from fundi.logging import get_logger
-from fundi.util import normalize_annotation
+from fundi.util import normalize_annotation, callable_str
 from fundi.types import CacheKey, CallableInfo, ParameterResult, Parameter
 
 logger = get_logger("resolve")
@@ -18,7 +18,7 @@ def resolve_by_dependency(
 
     assert dependency is not None
 
-    logger.debug("Resolving %r using dependency %r", param.name, dependency.call)
+    logger.debug("Resolving %r using dependency %s", param.name, callable_str(dependency.call))
 
     value = override.get(dependency.call)
     if value is not None:
@@ -51,13 +51,19 @@ def resolve_by_type(scope: Scope, param: Parameter) -> ParameterResult:
         if value is NO_VALUE:
             continue
 
-        logger.debug("Found value %r for %r: Annotation", value, param.name)
-
         match value:
             case TypeInstance(value):
+                logger.debug("Found type instance %r for %r", value, param.name)
                 return ParameterResult(param, value, None, resolved=True)
             case TypeFactory(factory):
+                logger.debug(
+                    "Found type factory %s for %r",
+                    callable_str(factory.call),
+                    param.name,
+                )
                 return ParameterResult(param, None, factory, False)
+
+    logger.debug("Not found value for %r using annotation %r", param.name, param.annotation)
 
     return ParameterResult(param, None, None, resolved=False)
 
