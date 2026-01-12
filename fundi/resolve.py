@@ -1,9 +1,9 @@
-from fundi.scope import Scope, NO_VALUE, TypeInstance, TypeFactory
 import typing
 import collections.abc
 
 from fundi.logging import get_logger
 from fundi.util import normalize_annotation, callable_str
+from fundi.scope import Scope, NO_VALUE, TypeInstance, TypeFactory
 from fundi.types import CacheKey, CallableInfo, ParameterResult, Parameter
 
 logger = get_logger("resolve")
