@@ -36,6 +36,7 @@ IGNORE_TYPES: tuple[type, ...] = (
 NO_VALUE = NoValue()
 
 T = typing.TypeVar("T")
+S = typing.TypeVar("S", bound="Scope")
 
 
 @dataclass
@@ -274,18 +275,19 @@ class Scope:
         )
 
     @classmethod
-    def from_legacy(cls: type[T], scope: Mapping[str, typing.Any]) -> T:
-        initial: dict[str | type, typing.Any] = {}
+    def from_legacy(cls: typing.Callable[[], S], scope: Mapping[str, typing.Any]) -> S:
+        new_scope = cls()
 
         for key, value in scope.items():
-            initial[key] = value
+            new_scope.values[key] = value
 
-            if type(value) in IGNORE_TYPES:
+            value_type = type(value)
+            if value_type in IGNORE_TYPES or getattr(value_type, "__module__", None) == "builtins":
                 continue
 
-            initial[type(value)] = TypeInstance(value)
+            new_scope.types[value_type] = value
 
-        return cls(initial)
+        return new_scope
 
     __or__ = merge
 
