@@ -107,7 +107,13 @@ def resolve(
         if parameter.resolve_by_type:
             result = resolve_by_type(scope, parameter)
 
-            if result.resolved or result.dependency is not None:
+            if result.dependency is not None:
+                yield resolve_by_dependency(
+                    parameter.copy(from_=result.dependency), cache, override
+                )
+                continue
+
+            if result.resolved:
                 yield result
                 continue
 
