@@ -1,4 +1,5 @@
 import typing
+from itertools import chain
 from dataclasses import dataclass
 from collections.abc import Mapping
 
@@ -245,11 +246,16 @@ class Scope:
         """
         Merges two scopes together and returns the result as the new Scope instance
         """
-        initial = {}
-        initial.update(self.simplify())
-        initial.update(other.simplify())
+        new_scope = Scope()
+        new_scope.values = {**self.values, **other.values}
+        new_scope.types = {**self.types, **other.types}
+        new_scope.factories = {
+            type_: factory
+            for type_, factory in chain(self.factories.items(), other.factories.items())
+            if type_ not in new_scope.types
+        }
 
-        return Scope(initial)
+        return new_scope
 
     def copy(self) -> "Scope":
         """
