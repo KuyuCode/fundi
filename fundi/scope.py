@@ -1,7 +1,7 @@
 import typing
 from itertools import chain
 from dataclasses import dataclass
-from collections.abc import Mapping
+from collections.abc import Mapping, Callable
 
 from typing_extensions import NewType, overload, override
 
@@ -39,18 +39,58 @@ T = typing.TypeVar("T")
 S = typing.TypeVar("S", bound="Scope")
 
 
-@dataclass
-class TypeFactory(typing.Generic[T]):
-    """Marker type. Should be used to determine whether this value is a factory or instance of the type"""
+class Type:
+    """
+    Marker group. Markers of this group should be used to distinguish factories and instances for the given type.
 
-    factory: "CallableInfo[T]"
+    Convenient when used with match-statement:
 
+    match scope.resolve_by_type(User):
+        case Type.Instance(value):
+            value = value
+        case Type.Factory(factory):
+            value = inject(scope, factory)
+        case _:
+            raise ValueError(f"No value found for {User}")
+    """
 
-@dataclass
-class TypeInstance(typing.Generic[T]):
-    """Marker type. Should be used to determine whether this value is a factory or instance of the type"""
+    @dataclass
+    class Factory(typing.Generic[T]):
+        """Marker type. Wraps the factory of the type and should be used to distinguish the factory from instance"""
 
-    instance: T
+        factory: "CallableInfo[T]"
+
+    @dataclass
+    class Instance(typing.Generic[T]):
+        """Marker type. Wraps the instance of the type and should be used to distinguish the instance from the factory"""
+
+        instance: T
+
+    @staticmethod
+    def factory(
+        factory_callable: Callable[..., T],
+        caching: bool = False,
+        async_: bool | None = None,
+        generator: bool | None = None,
+        context: bool | None = None,
+        use_return_annotation: bool = True,
+        side_effects: tuple[Callable[..., typing.Any], ...] = (),
+    ) -> Factory[T]:
+        return Type.Factory(
+            scan(
+                factory_callable,
+                caching=caching,
+                async_=async_,
+                generator=generator,
+                context=context,
+                use_return_annotation=use_return_annotation,
+                side_effects=side_effects,
+            )
+        )
+
+    @staticmethod
+    def instance(instance: T) -> Instance[T]:
+        return Type.Instance(instance)
 
 
 class Scope:
@@ -86,9 +126,9 @@ class Scope:
                 continue
 
             match value:
-                case TypeInstance(instance):
+                case Type.Instance(instance):
                     self.types[key] = instance
-                case TypeFactory(factory):
+                case Type.Factory(factory):
                     self.factories[key] = factory
                 case value:
                     raise InvalidInitialValue(value)
@@ -179,7 +219,7 @@ class Scope:
         mapping: (
             Mapping[
                 str | type | NewType,
-                TypeInstance[typing.Any] | TypeFactory[typing.Any] | typing.Any,
+                Type.Instance[typing.Any] | Type.Factory[typing.Any] | typing.Any,
             ]
             | None
         ) = None,
@@ -202,9 +242,9 @@ class Scope:
                 continue
 
             match value:
-                case TypeInstance(value):
+                case Type.Instance(value):
                     self.types[key] = value
-                case TypeFactory(factory):
+                case Type.Factory(factory):
                     self.factories[key] = factory
 
     def resolve_by_name(self, key: str, *, default: typing.Any = NO_VALUE) -> typing.Any | NoValue:
@@ -219,14 +259,14 @@ class Scope:
     @overload
     def resolve_by_type(
         self, type_: NewType, default: T | NoValue = NO_VALUE
-    ) -> TypeInstance[typing.Any] | TypeFactory[typing.Any] | T | NoValue: ...
+    ) -> Type.Instance[typing.Any] | Type.Factory[typing.Any] | T | NoValue: ...
     @overload
     def resolve_by_type(
         self, type_: type[T], default: T | NoValue = NO_VALUE
-    ) -> TypeInstance[T] | TypeFactory[T] | NoValue: ...
+    ) -> Type.Instance[T] | Type.Factory[T] | NoValue: ...
     def resolve_by_type(
         self, type_: typing.Any, default: typing.Any = NO_VALUE
-    ) -> TypeInstance[typing.Any] | TypeFactory[typing.Any] | NoValue | typing.Any:
+    ) -> Type.Instance[typing.Any] | Type.Factory[typing.Any] | NoValue | typing.Any:
         """
         Resolves value or factory by the provided type.
 
@@ -236,10 +276,10 @@ class Scope:
         Resolution order: instance of the type -> type factory -> default value
         """
         if type_ in self.types:
-            return TypeInstance(self.types[type_])
+            return Type.Instance(self.types[type_])
 
         if type_ in self.factories:
-            return TypeFactory(self.factories[type_])
+            return Type.Factory(self.factories[type_])
 
         return default
 
@@ -270,8 +310,8 @@ class Scope:
         """
         return (
             self.values
-            | {t: TypeInstance(ti) for t, ti in self.types.items()}
-            | {t: TypeFactory(f) for t, f in self.factories.items()}
+            | {t: Type.Instance(ti) for t, ti in self.types.items()}
+            | {t: Type.Factory(f) for t, f in self.factories.items()}
         )
 
     @classmethod
@@ -290,6 +330,13 @@ class Scope:
         return new_scope
 
     __or__ = merge
+
+    def __getitem__(self, key: typing.Any):
+        match key:
+            case str():
+                return self.resolve_by_name(key)
+            case type():
+                return self.resolve_by_type(key)
 
     @override
     def __str__(self):

@@ -1,17 +1,16 @@
 from typing import NewType
-from fundi import scan
-from fundi.scope import Scope, NO_VALUE, TypeInstance, TypeFactory
+from fundi.scope import Scope, NO_VALUE, Type
 
 
 def test_exact():
     class User:
         pass
 
-    initial = {User: TypeInstance(User())}
+    initial = {User: Type.instance(User())}
     scope = Scope(initial)
 
     value = scope.resolve_by_type(User)
-    assert isinstance(value, TypeInstance)
+    assert isinstance(value, Type.Instance)
     assert value.instance is initial[User].instance
     assert isinstance(value.instance, User)
 
@@ -35,7 +34,7 @@ def test_mro():
     scope.add_type(admin, mro=True)
 
     value = scope.resolve_by_type(User)
-    assert isinstance(value, TypeInstance)
+    assert isinstance(value, Type.Instance)
     assert value.instance is admin
     assert isinstance(value.instance, User) and isinstance(value.instance, Admin)
 
@@ -48,11 +47,11 @@ def test_alias():
 
     user = User()
 
-    initial = {Actor: TypeInstance(user)}
+    initial = {Actor: Type.instance(user)}
     scope = Scope(initial)
 
     value = scope.resolve_by_type(Actor)
-    assert isinstance(value, TypeInstance)
+    assert isinstance(value, Type.Instance)
     assert value.instance is user
     assert isinstance(value.instance, User)
 
@@ -64,10 +63,10 @@ def test_factory():
     def factory() -> User:
         return User()
 
-    initial = {User: TypeFactory(scan(factory))}
+    initial = {User: Type.factory(factory)}
     scope = Scope(initial)
 
     value = scope.resolve_by_type(User)
 
-    assert isinstance(value, TypeFactory)
+    assert isinstance(value, Type.Factory)
     assert value.factory.call is factory

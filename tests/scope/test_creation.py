@@ -2,7 +2,7 @@ import pytest
 
 from fundi import scan
 from fundi.exceptions import InvalidInitialValue
-from fundi.scope import Scope, TypeInstance, TypeFactory
+from fundi.scope import Scope, Type
 
 
 def test_fundamental_types_only():
@@ -41,7 +41,7 @@ def test_custom_type_with_marker():
     class User:
         pass
 
-    initial = {User: TypeInstance(User())}
+    initial = {User: Type.instance(User())}
 
     scope = Scope(initial)
 
@@ -70,7 +70,7 @@ def test_factory_with_marker():
     def factory() -> User:
         return User()
 
-    initial = {User: TypeFactory(scan(factory))}
+    initial = {User: Type.factory(factory)}
 
     scope = Scope(initial)
 

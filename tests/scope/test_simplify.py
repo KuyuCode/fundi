@@ -1,12 +1,11 @@
-from fundi import scan
-from fundi.scope import Scope, TypeInstance, TypeFactory
+from fundi.scope import Scope, Type
 
 
 def test_default():
     initial = {
         "key": "value",
-        int: TypeInstance(2),
-        str: TypeFactory(scan(lambda: "string")),
+        int: Type.instance(2),
+        str: Type.factory(lambda: "string"),
         "another key": "another value",
     }
     scope = Scope(initial)

@@ -1,5 +1,5 @@
 from fundi import scan
-from fundi.scope import Scope, TypeInstance, TypeFactory
+from fundi.scope import Scope, Type
 
 
 def test_default():
@@ -13,7 +13,7 @@ def test_default():
 
 def test_type_instances():
     scope = Scope()
-    scope.update({int: TypeInstance(2)})
+    scope.update({int: Type.instance(2)})
 
     assert scope.values == {}
     assert scope.types == {int: 2}
@@ -23,7 +23,7 @@ def test_type_instances():
 def test_type_factories():
     scope = Scope()
     factory = scan(lambda: 1)
-    scope.update({int: TypeFactory(factory)})
+    scope.update({int: Type.Factory(factory)})
 
     assert scope.values == {}
     assert scope.types == {}

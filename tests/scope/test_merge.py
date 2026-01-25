@@ -2,7 +2,7 @@ import typing
 from typing_extensions import NewType
 
 from fundi import scan
-from fundi.scope import Scope, TypeInstance, TypeFactory
+from fundi.scope import Scope, Type
 
 
 def test_replace():
@@ -20,13 +20,13 @@ def test_replace():
 
     initial: dict[str | type | NewType, typing.Any] = {
         "key": "value",
-        AClass: TypeInstance(1),
-        BClass: TypeFactory(scan(factory0)),
+        AClass: Type.instance(1),
+        BClass: Type.factory(factory0),
     }
 
     scope = Scope(initial)
     scope1 = Scope(
-        {"key": "another value", AClass: TypeInstance(2), BClass: TypeFactory(scan(factory1))}
+        {"key": "another value", AClass: Type.instance(2), BClass: Type.factory(factory1)}
     )
 
     scope_merged = scope | scope1
@@ -48,7 +48,7 @@ def test_extend():
 
     scope = Scope({"base_key": "initial value"})
 
-    scope1 = Scope({"key": "value", AClass: TypeInstance(1), BClass: TypeFactory(scan(factory0))})
+    scope1 = Scope({"key": "value", AClass: Type.instance(1), BClass: Type.factory(factory0)})
 
     scope_merged = scope | scope1
 

@@ -2,8 +2,8 @@ import typing
 import collections.abc
 
 from fundi.logging import get_logger
+from fundi.scope import Scope, NO_VALUE, Type
 from fundi.util import normalize_annotation, callable_str
-from fundi.scope import Scope, NO_VALUE, TypeInstance, TypeFactory
 from fundi.types import CacheKey, CallableInfo, ParameterResult, Parameter
 
 logger = get_logger("resolve")
@@ -52,10 +52,10 @@ def resolve_by_type(scope: Scope, param: Parameter) -> ParameterResult:
             continue
 
         match value:
-            case TypeInstance(value):
+            case Type.Instance(value):
                 logger.debug("Found type instance %r for %r", value, param.name)
                 return ParameterResult(param, value, None, resolved=True)
-            case TypeFactory(factory):
+            case Type.Factory(factory):
                 logger.debug(
                     "Found type factory %s for %r",
                     callable_str(factory.call),
