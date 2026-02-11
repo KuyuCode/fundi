@@ -331,14 +331,25 @@ class Scope:
 
     __or__ = merge
 
-    def __getitem__(self, key: typing.Any):
+    @overload
+    def __getitem__(self, key: type[T]) -> Type.Instance[T] | Type.Factory[T]: ...
+    @overload
+    def __getitem__(self, key: NewType) -> Type.Instance[typing.Any] | Type.Factory[typing.Any]: ...
+    @overload
+    def __getitem__(self, key: str) -> typing.Any: ...
+    def __getitem__(self, key: typing.Any) -> typing.Any:
+        value = NO_VALUE
         match key:
             case str():
-                return self.resolve_by_name(key)
-            case type():
-                return self.resolve_by_type(key)
+                value = self.resolve_by_name(key)
 
-        raise KeyError(key)
+            case type() | NewType():
+                value = self.resolve_by_type(key)
+
+        if value is NO_VALUE:
+            raise KeyError(key)
+
+        return value
 
     @override
     def __str__(self):
