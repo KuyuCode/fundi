@@ -2,10 +2,10 @@ import typing
 import contextlib
 import collections.abc
 
-from fundi.scope import Scope
 from fundi.resolve import resolve
+from fundi.scope import Scope, Type
 from fundi.logging import get_logger
-from fundi.types import CacheKey, CallableInfo
+from fundi.types import CacheKey, CallableInfo, Parameter
 from fundi.util import call_sync, call_async, add_injection_trace, callable_str
 
 injection_logger = get_logger("inject.injection")
@@ -59,7 +59,12 @@ def injection_impl(
 
                 collection_logger.debug("Passing %r upstream to be injected", dependency.call)
 
-                subscope = scope | Scope.from_legacy({"__fundi_parameter__": result.parameter})
+                subscope = scope | Scope(
+                    {
+                        "__fundi_parameter__": result.parameter,
+                        Parameter: Type.instance(result.parameter),
+                    }
+                )
                 value = yield subscope, dependency, True
 
                 if dependency.use_cache:
