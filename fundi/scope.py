@@ -338,6 +338,8 @@ class Scope:
             case type():
                 return self.resolve_by_type(key)
 
+        raise KeyError(key)
+
     @override
     def __str__(self):
         return f"Scope{{named={len(self.values)}, by_type={len(self.types)}, factories={len(self.factories)}}}"
