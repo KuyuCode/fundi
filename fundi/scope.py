@@ -164,6 +164,9 @@ class Scope:
         If mro is True - adds this value by type and type's MRO(method resolution order)
         ignoring last entry in the list.
 
+        If a factory for the given type already exists, it is removed —
+        an instance always takes precedence over a factory.
+
         Returns nothing.
         """
         if isinstance(instance, NoValue):
@@ -182,10 +185,15 @@ class Scope:
         else:
             raise ValueError("Unable to detect type or value of the assignment")
 
+        if type_ in self.factories:
+            del self.factories[type_]
+
         self.types[type_] = instance
 
         if mro:
             for type_ in type_.mro()[1:-1]:
+                if type_ in self.factories:
+                    del self.factories[type_]
                 self.types[type_] = instance
 
     @overload
@@ -205,12 +213,18 @@ class Scope:
 
         If the ``type_`` is the tuple of types then the factory is set for each type of that tuple.
 
+        If an instance for the given type already exists, it is removed —
+        a factory cannot coexist with an instance.
+
         Returns nothing.
         """
         if isinstance(type_, tuple):
             for type_ in type_:
                 self.factories[type_] = scan(factory)
             return
+
+        if type_ in self.types:
+            del self.types[type_]
 
         self.factories[type_] = scan(factory)
 
@@ -230,6 +244,9 @@ class Scope:
 
         ``mapping`` argument can be used to add multiple factories and type instances at a time.
         And ``values`` argument can be used only for string based values.
+
+        When adding a type instance, any existing factory for that type is removed.
+        When adding a type factory, any existing instance for that type is removed.
         """
         self.values.update(values)
 
@@ -243,8 +260,12 @@ class Scope:
 
             match value:
                 case Type.Instance(value):
+                    if key in self.factories:
+                        del self.factories[key]
                     self.types[key] = value
                 case Type.Factory(factory):
+                    if key in self.types:
+                        del self.types[key]
                     self.factories[key] = factory
 
     def resolve_by_name(self, key: str, *, default: typing.Any = NO_VALUE) -> typing.Any | NoValue:
@@ -285,7 +306,10 @@ class Scope:
 
     def merge(self, other: "Scope") -> "Scope":
         """
-        Merges two scopes together and returns the result as the new Scope instance
+        Merges two scopes together and returns the result as the new Scope instance.
+
+        If the method detects confict of type instance and type factories -
+        the type factories with conflicts are being discarded
         """
         new_scope = Scope()
         new_scope.values = {**self.values, **other.values}
@@ -302,7 +326,11 @@ class Scope:
         """
         Make a copy of this scope
         """
-        return Scope(self.simplify())
+        scope = Scope()
+        scope.values = self.values.copy()
+        scope.types = self.types.copy()
+        scope.factories = self.factories.copy()
+        return scope
 
     def simplify(self):
         """
@@ -316,6 +344,9 @@ class Scope:
 
     @classmethod
     def from_legacy(cls: typing.Callable[[], S], scope: Mapping[str, typing.Any]) -> S:
+        """
+        Makes the `Scope` instance from the legacy dictionary based scope
+        """
         new_scope = cls()
 
         for key, value in scope.items():
@@ -338,6 +369,14 @@ class Scope:
     @overload
     def __getitem__(self, key: str) -> typing.Any: ...
     def __getitem__(self, key: typing.Any) -> typing.Any:
+        """
+        Get the value for the ``key``.
+
+        If the ``key`` is a ``type`` or ``NewType`` instance tries to
+        lookup for value using ``resolve_by_type`` method
+
+        If it is the string - uses ``resolve_by_name`` method
+        """
         value = NO_VALUE
         match key:
             case str():
@@ -350,6 +389,13 @@ class Scope:
             raise KeyError(key)
 
         return value
+
+    def __contains__(self, key: str | type[typing.Any] | NewType) -> bool:
+        """
+        Check if the `key` is in this `Scope` in following order:
+        named values -> typed instances -> typed factories
+        """
+        return key in self.values or key in self.types or key in self.factories
 
     @override
     def __str__(self):
