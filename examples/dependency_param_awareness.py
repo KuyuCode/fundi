@@ -1,4 +1,4 @@
-from fundi import scan, FromType, from_, inject, Parameter
+from fundi import scan, FromType, from_, inject, Parameter, Scope
 
 
 def header(param: FromType[Parameter]) -> str:
@@ -17,4 +17,4 @@ def application(token: str = from_(header)):
     assert token == f"token-{str!r}"
 
 
-inject({}, scan(application))
+inject(Scope(), scan(application))

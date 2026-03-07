@@ -153,6 +153,7 @@ but itself is not a coroutine function. In this case you will need
 to override ``async_`` property of the dependency:
 
 .. code-block:: python 
+    
     from fundi import from_
 
     def require_event_data(event: RemoteEvent):
@@ -177,6 +178,7 @@ For example, if there is function that returns context-manager and type-hint is 
 to contextlib.AbstractContextManager FunDI will correctly infer it as lifespan dependency.
 
 .. code-block:: python
+    
     from fundi import from_
 
     from contextlib import AbstractContextManager

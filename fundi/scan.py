@@ -102,7 +102,7 @@ def scan(
 
     :param call: callable to get information from
     :param caching:  whether to use cached result of this callable or not
-    :param async_: Override "async_" attribute value
+    :param async_: Override "async\_" attribute value
     :param generator: Override "generator" attribute value
     :param context: Override "context" attribute value
     :param use_return_annotation: Whether to use call's return
@@ -156,9 +156,7 @@ def scan(
         return info.copy(**overrides)
 
     if not callable(call):
-        raise ValueError(
-            f"Callable expected, got {type(call)!r}"
-        )  # pyright: ignore[reportUnreachable]
+        raise ValueError(f"Callable expected, got {type(call)!r}")  # pyright: ignore[reportUnreachable]
 
     truecall = call.__call__
     if isinstance(call, (FunctionType, BuiltinFunctionType, MethodType, type)):
@@ -226,4 +224,4 @@ def scan(
         logger.debug("Unable to cache scan result in %r", call)
         pass
 
-    return info.copy(side_effects=tuple(_side_effects))
+    return info.copy(side_effects=side_effects)

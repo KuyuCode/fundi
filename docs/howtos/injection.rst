@@ -25,7 +25,7 @@ Example of synchronous injection:
     import secrets
     from contextlib import ExitStack
 
-    from fundi import from_, scan, inject
+    from fundi import Scope, from_, scan, inject
 
 
     def require_unique_id() -> str:
@@ -36,7 +36,7 @@ Example of synchronous injection:
         print(f"Application started with {user_id = } and {username = }")
 
 
-    inject({"username": "Kuyugama"}, scan(application))
+    inject(Scope({"username": "Kuyugama"}), scan(application))
 
 
 Example of asynchronous injection:
@@ -47,7 +47,7 @@ Example of asynchronous injection:
     import asyncio
     from contextlib import AsyncExitStack
 
-    from fundi import from_, scan, ainject
+    from fundi import Scope, from_, scan, ainject
 
 
     async def require_user(username: str) -> str:
@@ -60,7 +60,7 @@ Example of asynchronous injection:
 
 
     async def main():
-        ainject({"username": "Kuyugama"}, scan(application))
+        await ainject(Scope({"username": "Kuyugama"}), scan(application))
 
     if __name__ == "__main__":
         asyncio.run(main())
@@ -72,14 +72,14 @@ Example of injection that produces value:
     import secrets
     from contextlib import ExitStack
 
-    from fundi import scan, inject
+    from fundi import Scope, scan, inject
 
 
     def require_unique_id() -> str:
         return secrets.token_hex(12)
 
 
-    user_id = inject({}, scan(require_user_id))
+    user_id = inject(Scope(), scan(require_unique_id))
     print("Generated user id is", user_id)
 
 ..

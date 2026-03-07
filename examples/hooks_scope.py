@@ -1,4 +1,4 @@
-from fundi import scan
+from fundi import scan, Scope
 from fundi import inject, with_hooks
 
 
@@ -8,4 +8,4 @@ def dependency(name: str):
     print(f"dependency({name=!r})")
 
 
-inject({}, scan(dependency))
+inject(Scope(), scan(dependency))

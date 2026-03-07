@@ -6,6 +6,7 @@ from . import exceptions
 from .resolve import resolve
 from .hooks import with_hooks
 from .debug import tree, order
+from .scope import Scope, Type
 from .inject import inject, ainject
 from .side_effects import with_side_effects
 from .configurable import configurable_dependency, MutableConfigurationWarning
@@ -27,6 +28,8 @@ FromType: _typing.TypeAlias = _typing.Annotated[R, TypeResolver]
 __all__ = [
     "scan",
     "tree",
+    "Type",
+    "Scope",
     "order",
     "from_",
     "inject",

@@ -1,7 +1,7 @@
 import typing
 from collections.abc import Mapping
 
-from fundi import from_, scan, inject, configurable_dependency
+from fundi import from_, scan, inject, configurable_dependency, Scope
 
 
 def require_user() -> dict[str, str | tuple[str]]:
@@ -26,4 +26,4 @@ def application(
     print("User has permission")
 
 
-inject({}, scan(application))
+inject(Scope(), scan(application))

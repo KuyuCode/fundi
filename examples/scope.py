@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from fundi import from_, inject, scan
+from fundi import from_, inject, scan, Scope
 
 
 class Session:
@@ -20,4 +20,4 @@ def application(
 
 
 # "database_url" key goes to "database_url" parameter of require_session function
-inject({"database_url": "url"}, scan(application))
+inject(Scope({"database_url": "url"}), scan(application))

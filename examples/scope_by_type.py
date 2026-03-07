@@ -1,4 +1,4 @@
-from fundi import inject, scan, FromType
+from fundi import inject, scan, FromType, Scope, Type
 
 
 class Session:
@@ -11,5 +11,5 @@ def application(
     print(f"Application started with {session = }")
 
 
-# "_" key goes to "session" parameter of application function
-inject({"_": Session()}, scan(application))
+# Scope key goes to "session" parameter of application function
+inject(Scope({Session: Type.instance(Session())}), scan(application))

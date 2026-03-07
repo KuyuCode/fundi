@@ -11,9 +11,9 @@ FunDI provides useful functions to help you debug and optimize your dependency i
 
       .. code-block:: python
 
-        from fundi import tree, scan
+        from fundi import Scope, tree, scan
 
-        print(tree({"username": "user"}, scan(application)))
+        print(tree(Scope({"username": "user"}), scan(application)))
 
       Outputs::
 
@@ -27,9 +27,9 @@ FunDI provides useful functions to help you debug and optimize your dependency i
 
       .. code-block:: python
 
-        from fundi import order, scan
+        from fundi import Scope, order, scan
 
-        print(order({"username": "user"}, scan(application)))
+        print(order(Scope({"username": "user"}), scan(application)))
 
       Outputs::
 
@@ -57,7 +57,7 @@ library adds its injection trace to exception.
 
     from contextlib import ExitStack
 
-    from fundi import from_, scan, inject, injection_trace
+    from fundi import Scope, from_, scan, inject, injection_trace
 
 
     def require_random_animal() -> str:
@@ -72,7 +72,7 @@ library adds its injection trace to exception.
 
 
     try:
-        inject({}, scan(application))
+        inject(Scope(), scan(application))
     except Exception as e:
         print(injection_trace(e))
 

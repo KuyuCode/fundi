@@ -1,4 +1,4 @@
-from fundi import from_, scan, inject, injection_trace
+from fundi import from_, scan, inject, injection_trace, Scope
 
 
 def require_random_animal() -> str:
@@ -13,6 +13,6 @@ def application(
 
 
 try:
-    inject({}, scan(application))
+    inject(Scope(), scan(application))
 except Exception as e:
     print(injection_trace(e))
