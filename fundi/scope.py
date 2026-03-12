@@ -1,3 +1,4 @@
+import inspect
 import typing
 from itertools import chain
 from dataclasses import dataclass
@@ -198,14 +199,43 @@ class Scope:
 
     @overload
     def add_factory(
-        self, type_: NewType | tuple[type[T], ...], factory: typing.Callable[..., T]
+        self,
+        factory: typing.Callable[..., typing.Any],
+        type_: NewType | tuple[type[NewType], ...] | None = None,
+        *,
+        caching: bool = False,
+        async_: bool | None = None,
+        generator: bool | None = None,
+        context: bool | None = None,
+        use_return_annotation: bool = True,
+        side_effects: tuple[typing.Callable[..., typing.Any], ...] = (),
     ) -> None: ...
+
     @overload
     def add_factory(
-        self, type_: type[T] | tuple[type[T], ...], factory: typing.Callable[..., T]
+        self,
+        factory: typing.Callable[..., T],
+        type_: type[T] | tuple[type[T], ...] | None = None,
+        *,
+        caching: bool = False,
+        async_: bool | None = None,
+        generator: bool | None = None,
+        context: bool | None = None,
+        use_return_annotation: bool = True,
+        side_effects: tuple[typing.Callable[..., typing.Any], ...] = (),
     ) -> None: ...
+
     def add_factory(
-        self, type_: type[T] | tuple[type[T], ...], factory: typing.Callable[..., T]
+        self,
+        factory: typing.Callable[..., T],
+        type_: NewType | type[T] | tuple[type[T], ...] | None = None,
+        *,
+        caching: bool = False,
+        async_: bool | None = None,
+        generator: bool | None = None,
+        context: bool | None = None,
+        use_return_annotation: bool = True,
+        side_effects: tuple[typing.Callable[..., typing.Any], ...] = (),
     ) -> None:
         """
         Adds factory of the type to the scope.
@@ -218,15 +248,33 @@ class Scope:
 
         Returns nothing.
         """
+
+        scanned_factory = scan(
+            factory,
+            caching=caching,
+            async_=async_,
+            generator=generator,
+            context=context,
+            use_return_annotation=use_return_annotation,
+            side_effects=side_effects,
+        )
+
+        if type_ is None:
+            type_ = scanned_factory.return_annotation
+            if type_ is typing.Any or type_ is None or type_ is inspect.Signature.empty:
+                raise ValueError("Unable to identify return type of the factory")
+
         if isinstance(type_, tuple):
-            for type_ in type_:
-                self.factories[type_] = scan(factory)
+            for type__ in type_:
+                if type__ in self.types:
+                    del self.types[type__]  # ty:ignore[invalid-argument-type]
+                self.factories[type__] = scanned_factory  # ty:ignore[invalid-assignment]
             return
 
         if type_ in self.types:
             del self.types[type_]
 
-        self.factories[type_] = scan(factory)
+        self.factories[type_] = scanned_factory
 
     def update(
         self,

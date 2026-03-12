@@ -70,15 +70,37 @@ Adding Type Factories
 
 Type factories are callables that produce an instance of a certain type when it's requested. This is useful for resources that should be created on-demand.
 
+The ``add_factory`` method is highly flexible. You can provide the type explicitly, or ``fundi`` can infer it from the factory's return type annotation.
+
 .. code-block:: python
 
+    # Explicitly providing the type
     def create_db_connection() -> DBConnection:
         return DBConnection()
 
-    scope.add_factory(DBConnection, create_db_connection)
+    scope.add_factory(create_db_connection, DBConnection)
 
-    # The factory will be called when a dependant needs a DBConnection
-    def my_dependency(db: DBConnection):
+    # Inferring the type from the return annotation
+    def create_another_connection() -> AnotherConnection:
+        return AnotherConnection()
+
+    scope.add_factory(create_another_connection)
+
+
+Additionally, you can pass parameters from the ``scan()`` function directly to ``add_factory`` to control caching and other behaviors.
+
+.. code-block:: python
+
+    # Adding a factory with caching enabled
+    def create_cached_service() -> CachedService:
+        print("Creating new CachedService instance")
+        return CachedService()
+
+    scope.add_factory(create_cached_service, caching=True)
+
+    # The factory will be called only once for the first dependant that needs a CachedService.
+    # Subsequent requests will receive the cached instance.
+    def my_dependency(service: CachedService):
         ...
 
 Mutual Exclusivity
