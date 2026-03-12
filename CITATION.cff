@@ -18,6 +18,6 @@ keywords:
   - dependency injection
   - fundi
 license: LGPL-3.0
-commit: 337b387fcc5490397d59d502a48fb7677c405841
-version: 1.6.0
+commit: c9638062cbb2d4c3facfa0cbaae90bde27fc1767
+version: 1.6.1
 date-released: '2026-03-12'
