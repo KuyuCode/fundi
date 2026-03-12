@@ -100,7 +100,7 @@ Additionally, you can pass parameters from the ``scan()`` function directly to `
 
     # The factory will be called only once for the first dependant that needs a CachedService.
     # Subsequent requests will receive the cached instance.
-    def my_dependency(service: CachedService):
+    def my_dependency(service: FromType[CachedService]):
         ...
 
 Mutual Exclusivity
@@ -173,7 +173,7 @@ Dependant that uses a value resolved by type:
                 return self._user
             return None
 
-    def require_user(request: Request) -> str:
+    def require_user(request: FromType[Request]) -> str:
         user = request.get_header("User")
         if user is None:
             raise ValueError("Unauthorized")
