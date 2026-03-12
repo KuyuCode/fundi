@@ -224,4 +224,4 @@ def scan(
         logger.debug("Unable to cache scan result in %r", call)
         pass
 
-    return info.copy(side_effects=side_effects)
+    return info.copy(side_effects=tuple(_side_effects))
