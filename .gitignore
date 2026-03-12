@@ -5,3 +5,4 @@ __pycache__
 .python-version
 docs/_build
 play.py
+play*.py

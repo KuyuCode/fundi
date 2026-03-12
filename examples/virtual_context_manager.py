@@ -1,4 +1,4 @@
-from fundi import from_, inject, scan, virtual_context
+from fundi import from_, inject, scan, virtual_context, Scope
 
 
 @virtual_context
@@ -12,4 +12,4 @@ def application(virtual_ctx_value: str = from_(virtual_ctx)):
     print(f"Application started with {virtual_ctx_value = }")
 
 
-inject({}, scan(application))
+inject(Scope(), scan(application))

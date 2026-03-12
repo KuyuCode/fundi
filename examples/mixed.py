@@ -1,6 +1,6 @@
 import asyncio
 
-from fundi import from_, ainject, scan
+from fundi import Scope, from_, ainject, scan
 
 
 def require_user() -> str:
@@ -12,7 +12,7 @@ async def application(user: str = from_(require_user)):
 
 
 async def main():
-    await ainject({}, scan(application))
+    await ainject(Scope(), scan(application))
 
 
 if __name__ == "__main__":

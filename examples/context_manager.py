@@ -1,6 +1,4 @@
-from contextlib import ExitStack
-
-from fundi import from_, inject, scan
+from fundi import from_, inject, scan, Scope
 
 
 class RequireSession:
@@ -17,4 +15,4 @@ def application(session: str = from_(RequireSession)):
     print(f"Application started with {session = }")
 
 
-inject({}, scan(application))
+inject(Scope(), scan(application))

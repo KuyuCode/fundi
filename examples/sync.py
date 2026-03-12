@@ -1,4 +1,4 @@
-from fundi import from_, inject, scan
+from fundi import Scope, from_, inject, scan
 
 
 def require_user() -> str:
@@ -9,4 +9,4 @@ def application(user: str = from_(require_user)):
     print(f"Application started with {user = }")
 
 
-inject({}, scan(application))
+inject(Scope(), scan(application))

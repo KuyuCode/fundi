@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from fundi import from_, inject, scan
+from fundi import from_, inject, scan, Scope
 
 
 class Session:
@@ -27,4 +27,4 @@ def application(
     print(f"Application started with {session = }")
 
 
-inject({}, scan(application))
+inject(Scope(), scan(application))

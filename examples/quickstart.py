@@ -1,4 +1,4 @@
-from fundi import scan, from_, inject
+from fundi import scan, from_, inject, Scope
 
 
 def require_user():
@@ -9,4 +9,4 @@ def greet(user: str = from_(require_user)):
     print(f"Hello, {user}!")
 
 
-inject({}, scan(greet))
+inject(Scope(), scan(greet))

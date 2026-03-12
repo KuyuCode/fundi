@@ -31,7 +31,7 @@ Global side effect
 
     import typing
 
-    from fundi import with_side_effects, CallableInfo, inject, scan
+    from fundi import Scope, with_side_effects, CallableInfo, inject, scan
 
 
     def side_effect(__dependant__: CallableInfo[typing.Any], __values__: dict[str, typing.Any]):
@@ -43,7 +43,7 @@ Global side effect
         print(a, b)
 
 
-    inject({"a": 1, "b": "string"}, scan(app))
+    inject(Scope({"a": 1, "b": "string"}), scan(app))
  
 
 Local side effect
@@ -52,7 +52,7 @@ Local side effect
 
     import typing
 
-    from fundi import with_side_effects, CallableInfo, inject, scan
+    from fundi import Scope, with_side_effects, CallableInfo, inject, scan
 
 
     def side_effect(__dependant__: CallableInfo[typing.Any], __values__: dict[str, typing.Any]):
@@ -63,4 +63,4 @@ Local side effect
         print(a, b)
 
 
-    inject({"a": 1, "b": "string"}, scan(app, side_effects=(side_effect,)))
+    inject(Scope({"a": 1, "b": "string"}), scan(app, side_effects=(side_effect,)))

@@ -1,3 +1,4 @@
+from fundi.scope import Scope
 from fundi import resolve, from_, scan, exceptions, FromType
 
 
@@ -8,7 +9,7 @@ def test_resolve_sync():
     def func(arg: int, arg1: str, arg2: None = from_(dep)):
         pass
 
-    for result in resolve({"arg": 1, "arg1": "value"}, scan(func), {}):
+    for result in resolve(Scope.from_legacy({"arg": 1, "arg1": "value"}), scan(func), {}):
         if not result.resolved:
             assert result.dependency is not None
             assert result.dependency.call is dep
@@ -30,7 +31,7 @@ def test_resolve_async():
     async def func(arg: int, arg1: str, arg2: None = from_(dep)):
         pass
 
-    for result in resolve({"arg": 1, "arg1": "value"}, scan(func), {}):
+    for result in resolve(Scope.from_legacy({"arg": 1, "arg1": "value"}), scan(func), {}):
         if not result.resolved:
             assert result.dependency is not None
             assert result.dependency.call is dep
@@ -58,7 +59,9 @@ def test_resolve_by_type():
 
     event_handler = EventHandler()
 
-    for result in resolve({"arg": 1, "arg1": "value", "+1": event_handler}, scan(func), {}):
+    for result in resolve(
+        Scope.from_legacy({"arg": 1, "arg1": "value", "+1": event_handler}), scan(func), {}
+    ):
         assert result.parameter.name in ("arg", "arg1", "handler")
 
         if result.parameter.name == "arg1":
@@ -85,7 +88,9 @@ def test_resolve_by_type_using_FromType():
 
     event_handler = EventHandler()
 
-    for result in resolve({"arg": 1, "arg1": "value", "+1": event_handler}, scan(func), {}):
+    for result in resolve(
+        Scope.from_legacy({"arg": 1, "arg1": "value", "+1": event_handler}), scan(func), {}
+    ):
         assert result.parameter.name in ("arg", "arg1", "handler")
 
         if result.parameter.name == "arg1":
@@ -103,7 +108,7 @@ def test_override_result():
 
     def func(arg: int = from_(dep)): ...
 
-    for result in resolve({}, scan(func), {}, override={dep: 2}):
+    for result in resolve(Scope(), scan(func), {}, override={dep: 2}):
         assert result.parameter.name == "arg"
 
         assert result.value == 2
@@ -116,7 +121,7 @@ def test_override_dependency():
 
     def func(arg: int = from_(dep)): ...
 
-    for result in resolve({}, scan(func), {}, override={dep: scan(test_dep)}):
+    for result in resolve(Scope(), scan(func), {}, override={dep: scan(test_dep)}):
         assert result.parameter.name == "arg"
 
         assert result.resolved is False
@@ -129,7 +134,7 @@ def test_resolve_not_found():
     def func(arg: int): ...
 
     try:
-        for result in resolve({}, scan(func), {}):
+        for result in resolve(Scope(), scan(func), {}):
             # This assertion would never evaluate under normal circumstances
             assert result is None
     except exceptions.ScopeValueNotFoundError as exc:

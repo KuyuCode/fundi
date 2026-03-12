@@ -1,4 +1,4 @@
-from fundi import scan, inject
+from fundi import scan, inject, Scope
 
 
 def application(*, app_name: str, token: str) -> int:
@@ -13,7 +13,7 @@ def application(*, app_name: str, token: str) -> int:
 
 
 exit_code = inject(
-    {"app_name": "Application name", "token": "f5a7f859-8d0c-42b8-bc72-b7ea9ade0519"},
+    Scope({"app_name": "Application name", "token": "f5a7f859-8d0c-42b8-bc72-b7ea9ade0519"}),
     scan(application),
 )
 

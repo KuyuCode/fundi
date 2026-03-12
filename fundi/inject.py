@@ -3,21 +3,22 @@ import contextlib
 import collections.abc
 
 from fundi.resolve import resolve
+from fundi.scope import Scope, Type
 from fundi.logging import get_logger
-from fundi.types import CacheKey, CallableInfo
-from fundi.util import call_sync, call_async, add_injection_trace
+from fundi.types import CacheKey, CallableInfo, Parameter
+from fundi.util import call_sync, call_async, add_injection_trace, callable_str
 
 injection_logger = get_logger("inject.injection")
 collection_logger = get_logger("inject.collection")
 
 
 def injection_impl(
-    scope: collections.abc.Mapping[str, typing.Any],
+    scope: Scope,
     info: CallableInfo[typing.Any],
     cache: collections.abc.MutableMapping[CacheKey, typing.Any],
     override: collections.abc.Mapping[typing.Callable[..., typing.Any], typing.Any] | None,
 ) -> collections.abc.Generator[
-    tuple[collections.abc.Mapping[str, typing.Any], CallableInfo[typing.Any], bool],
+    tuple[collections.abc.Mapping[str, typing.Any] | Scope, CallableInfo[typing.Any], bool],
     typing.Any,
     None,
 ]:
@@ -41,7 +42,7 @@ def injection_impl(
 
     if info.scopehook:
         collection_logger.debug("Calling scope hook for %r", info.call)
-        scope = dict(scope)
+        scope = scope.copy()
         info.scopehook(scope, info)
 
     values: dict[str, typing.Any] = {}
@@ -57,7 +58,14 @@ def injection_impl(
                 ), "Dependency expected, got None. This is a bug, please report at https://github.com/KuyuCode/fundi"
 
                 collection_logger.debug("Passing %r upstream to be injected", dependency.call)
-                value = yield {**scope, "__fundi_parameter__": result.parameter}, dependency, True
+
+                subscope = scope | Scope(
+                    {
+                        "__fundi_parameter__": result.parameter,
+                        Parameter: Type.instance(result.parameter),
+                    }
+                )
+                value = yield subscope, dependency, True
 
                 if dependency.use_cache:
                     collection_logger.debug(
@@ -71,15 +79,19 @@ def injection_impl(
             collection_logger.debug("Passing %r side effects upstream to be injected", info.call)
             _values = values.copy()
             _info = info.copy(True)
-            _scope = {**scope}
-            for side_effect in info.side_effects:
-                yield {
-                    **scope,
+            _scope = scope.copy()
+
+            subscope = scope | Scope(
+                {
                     "__values__": _values,
                     "__dependant__": _info,
                     "__scope__": _scope,
                     "__fundi_parameter__": None,
-                }, side_effect, True
+                }
+            )
+
+            for side_effect in info.side_effects:
+                yield subscope, side_effect, True
 
         collection_logger.debug(
             "Passing %r with collected values %r to be called", info.call, values
@@ -93,7 +105,7 @@ def injection_impl(
 
 
 def inject(
-    scope: collections.abc.Mapping[str, typing.Any],
+    scope: collections.abc.Mapping[str, typing.Any] | Scope,
     info: CallableInfo[typing.Any],
     stack: contextlib.ExitStack | None = None,
     cache: collections.abc.MutableMapping[CacheKey, typing.Any] | None = None,
@@ -112,7 +124,14 @@ def inject(
     :return: result of callable
     """
     if info.async_:
-        raise RuntimeError("Cannot process async functions in synchronous injection")
+        raise RuntimeError(
+            "Cannot process async functions ({func}) in synchronous injection".format(
+                func=callable_str(info.call)
+            )
+        )
+
+    if not isinstance(scope, Scope):
+        scope = Scope.from_legacy(scope)
 
     if stack is None:
         injection_logger.debug("Exit stack not provided, creating own")
@@ -143,7 +162,7 @@ def inject(
                 inner_info.call,
             )
 
-            return call_sync(stack, inner_info, inner_scope)
+            return call_sync(stack, inner_info, inner_scope)  # type: ignore
     except Exception as exc:
         injection_logger.debug("Passing exception %r (%r) to downstream", exc, type(exc))
         with contextlib.suppress(StopIteration):
@@ -153,7 +172,7 @@ def inject(
 
 
 async def ainject(
-    scope: collections.abc.Mapping[str, typing.Any],
+    scope: collections.abc.Mapping[str, typing.Any] | Scope,
     info: CallableInfo[typing.Any],
     stack: contextlib.AsyncExitStack | None = None,
     cache: collections.abc.MutableMapping[CacheKey, typing.Any] | None = None,
@@ -171,6 +190,9 @@ async def ainject(
     :param override: override dependencies
     :return: result of callable
     """
+    if not isinstance(scope, Scope):
+        scope = Scope.from_legacy(scope)
+
     if stack is None:
         injection_logger.debug("Exit stack not provided, creating own")
         async with contextlib.AsyncExitStack() as stack:
@@ -201,9 +223,9 @@ async def ainject(
             )
 
             if info.async_:
-                return await call_async(stack, inner_info, inner_scope)
+                return await call_async(stack, inner_info, inner_scope)  # type: ignore
 
-            return call_sync(stack, inner_info, inner_scope)
+            return call_sync(stack, inner_info, inner_scope)  # type: ignore
     except Exception as exc:
         injection_logger.debug("Passing exception %r (%r) to downstream", exc, type(exc))
         with contextlib.suppress(StopIteration):

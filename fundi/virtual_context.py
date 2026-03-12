@@ -197,7 +197,7 @@ def virtual_context(
 
 
         with file("dontreadthis.txt") as f:
-            print(f.read()
+            print(f.read())
 
 
         @virtual_context

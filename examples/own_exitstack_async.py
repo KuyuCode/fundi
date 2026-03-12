@@ -1,7 +1,7 @@
 import asyncio
 from contextlib import AsyncExitStack
 
-from fundi import inject, scan, from_
+from fundi import inject, scan, from_, Scope
 
 
 def dependency(value: str = "default"):
@@ -16,7 +16,7 @@ def dependant(value: str = from_(dependency)):
 
 async def main():
     async with AsyncExitStack() as stack:
-        value = inject({"value": "value"}, scan(dependant), stack)
+        value = inject(Scope({"value": "value"}), scan(dependant), stack)
         print(value)
         print("Doing some computations before dependencies would tear-down")
         await asyncio.sleep(0.8)  # simulate computations

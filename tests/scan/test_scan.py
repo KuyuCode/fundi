@@ -1,7 +1,5 @@
 import typing
 import inspect
-import functools
-from typing import Callable
 from types import TracebackType
 
 from fundi.configurable import configurable_dependency

@@ -7,6 +7,9 @@ from dataclasses import dataclass, field, replace
 
 from fundi.logging import get_logger
 
+if typing.TYPE_CHECKING:
+    from fundi.scope import Scope
+
 __all__ = [
     "R",
     "Parameter",
@@ -32,7 +35,7 @@ class TypeResolver:
     annotation: type
 
 
-ScopeHook = typing.Callable[[dict[str, typing.Any], "CallableInfo[typing.Any]"], typing.Any]
+ScopeHook = typing.Callable[["Scope", "CallableInfo[typing.Any]"], typing.Any]
 
 
 @dataclass

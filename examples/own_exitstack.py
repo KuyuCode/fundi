@@ -1,7 +1,7 @@
 import time
 from contextlib import ExitStack
 
-from fundi import inject, scan, from_
+from fundi import inject, scan, from_, Scope
 
 
 def dependency(value: str = "default"):
@@ -15,7 +15,7 @@ def dependant(value: str = from_(dependency)):
 
 
 with ExitStack() as stack:
-    value = inject({"value": "value"}, scan(dependant), stack)
+    value = inject(Scope({"value": "value"}), scan(dependant), stack)
     print(value)
     print("Doing some computations before dependencies would tear-down")
     time.sleep(0.8)  # simulate computations

@@ -23,7 +23,7 @@ Example of overriding dependency result:
 
 .. code-block:: python
 
-    from fundi import scan, inject
+    from fundi import Scope, scan, inject
 
     from src import application
     from src.models import User
@@ -35,7 +35,7 @@ Example of overriding dependency result:
         username="test_user",
     )
 
-    inject({"username": test_user.username}, scan(application), override={require_user: test_user})
+    inject(Scope({"username": test_user.username}), scan(application), override={require_user: test_user})
 
 
 Example of overriding dependency callable:
@@ -44,7 +44,7 @@ Example of overriding dependency callable:
 
     from contextlib import ExitStack
 
-    from fundi import scan, inject
+    from fundi import Scope, scan, inject
 
     from src import application
     from src.models import User
@@ -61,5 +61,9 @@ Example of overriding dependency callable:
         return test_user
 
 
-    inject({"username": test_user.username}, scan(application), override={require_user: scan(test_require_user)})
+    inject(
+        Scope({"username": test_user.username}), 
+        scan(application), 
+        override={require_user: scan(test_require_user)}
+    )
 

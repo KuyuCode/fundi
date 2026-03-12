@@ -2,7 +2,8 @@ import typing
 import collections.abc
 
 from fundi.logging import get_logger
-from fundi.util import normalize_annotation
+from fundi.scope import Scope, NO_VALUE, Type
+from fundi.util import normalize_annotation, callable_str
 from fundi.types import CacheKey, CallableInfo, ParameterResult, Parameter
 
 logger = get_logger("resolve")
@@ -17,7 +18,7 @@ def resolve_by_dependency(
 
     assert dependency is not None
 
-    logger.debug("Resolving %r using dependency %r", param.name, dependency.call)
+    logger.debug("Resolving %r using dependency %s", param.name, callable_str(dependency.call))
 
     value = override.get(dependency.call)
     if value is not None:
@@ -40,25 +41,35 @@ def resolve_by_dependency(
     return ParameterResult(param, None, dependency, resolved=False)
 
 
-def resolve_by_type(
-    scope: collections.abc.Mapping[str, typing.Any], param: Parameter
-) -> ParameterResult:
+def resolve_by_type(scope: Scope, param: Parameter) -> ParameterResult:
     logger.debug("Resolving %r using annotation %r", param.name, param.annotation)
     type_options = normalize_annotation(param.annotation)
 
-    for value in scope.values():
-        if not isinstance(value, type_options):
+    for type_ in type_options:
+        value = scope.resolve_by_type(typing.cast(type[typing.Any], type_))
+
+        if value is NO_VALUE:
             continue
 
-        logger.debug("Found value %r for %r: Annotation", value, param.name)
+        match value:
+            case Type.Instance(value):
+                logger.debug("Found type instance %r for %r", value, param.name)
+                return ParameterResult(param, value, None, resolved=True)
+            case Type.Factory(factory):
+                logger.debug(
+                    "Found type factory %s for %r",
+                    callable_str(factory.call),
+                    param.name,
+                )
+                return ParameterResult(param, None, factory, False)
 
-        return ParameterResult(param, value, None, resolved=True)
+    logger.debug("Not found value for %r using annotation %r", param.name, param.annotation)
 
     return ParameterResult(param, None, None, resolved=False)
 
 
 def resolve(
-    scope: collections.abc.Mapping[str, typing.Any],
+    scope: Scope,
     info: CallableInfo[typing.Any],
     cache: collections.abc.Mapping[CacheKey, typing.Any],
     override: collections.abc.Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
@@ -102,12 +113,17 @@ def resolve(
         if parameter.resolve_by_type:
             result = resolve_by_type(scope, parameter)
 
+            if result.dependency is not None:
+                yield resolve_by_dependency(
+                    parameter.copy(from_=result.dependency), cache, override
+                )
+                continue
+
             if result.resolved:
                 yield result
                 continue
 
-        elif parameter.name in scope:
-            value = scope[parameter.name]
+        elif (value := scope.resolve_by_name(parameter.name)) is not NO_VALUE:
             logger.debug("Found value %r for %r: Name", value, parameter.name)
             yield ParameterResult(parameter, value, None, resolved=True)
             continue
