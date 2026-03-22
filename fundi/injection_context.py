@@ -32,8 +32,18 @@ from typing_extensions import Self
 from contextlib import AsyncExitStack, ExitStack
 from collections.abc import Mapping, MutableMapping
 
+from .scope import Scope
 from .inject import ainject, inject
 from .types import CacheKey, CallableInfo
+
+
+def _validate_scope(scope: Scope | Mapping[str, typing.Any] | None) -> Scope:
+    if not isinstance(scope, Scope):
+        scope = Scope.from_legacy(scope or {})
+    else:
+        scope = scope.copy()
+
+    return scope
 
 
 class InjectionContext:
@@ -44,11 +54,11 @@ class InjectionContext:
 
     def __init__(
         self,
-        scope: Mapping[str, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | Scope | None = None,
         cache: MutableMapping[CacheKey, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
     ) -> None:
-        self.scope: dict[str, typing.Any] = {**scope} if scope is not None else {}
+        self.scope: Scope = _validate_scope(scope)
 
         self.cache: dict[CacheKey, typing.Any] = {**cache} if cache is not None else {}
 
@@ -61,7 +71,7 @@ class InjectionContext:
     def inject(
         self,
         info: CallableInfo[typing.Any],
-        scope: Mapping[str, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | Scope | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ):
@@ -79,12 +89,14 @@ class InjectionContext:
         If ``no_cache`` is ``True`` then - cache is not used.
         This includes reads and writes to cache.
         """
-        scope = scope or {}
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else self.cache
 
+        scope = self.scope | _validate_scope(scope)
+        scope.add_factory(lambda: self.sub(scope), InjectionContext)
+
         return inject(
-            {**self.scope, **scope, "__fundi_injection_context__": self.sub()},
+            scope,
             info,
             self.stack,
             cache,
@@ -93,7 +105,7 @@ class InjectionContext:
 
     def sub(
         self,
-        scope: Mapping[str, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | Scope | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "InjectionContext":
@@ -112,7 +124,7 @@ class InjectionContext:
 
     def copy(
         self,
-        scope: Mapping[str, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | Scope | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "InjectionContext":
@@ -126,11 +138,11 @@ class InjectionContext:
 
         If ``no_cache`` is ``True`` then - cache is not copied.
         """
-        scope = scope or {}
+        scope = _validate_scope(scope)
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else {**self.cache}
 
-        return InjectionContext({**self.scope, **scope}, cache, {**self.override, **override})
+        return InjectionContext(self.scope | scope, cache, {**self.override, **override})
 
     def close(self):
         """
@@ -170,11 +182,11 @@ class AsyncInjectionContext:
 
     def __init__(
         self,
-        scope: Mapping[str, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | Scope | None = None,
         cache: MutableMapping[CacheKey, typing.Any] | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
     ) -> None:
-        self.scope: dict[str, typing.Any] = {**scope} if scope is not None else {}
+        self.scope: Scope = _validate_scope(scope)
 
         self.cache: dict[CacheKey, typing.Any] = {**cache} if cache is not None else {}
 
@@ -187,7 +199,7 @@ class AsyncInjectionContext:
     async def inject(
         self,
         info: CallableInfo[typing.Any],
-        scope: Mapping[str, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | Scope | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ):
@@ -205,11 +217,18 @@ class AsyncInjectionContext:
         If ``no_cache`` is ``True`` then - cache is not used.
         This includes reads and writes to cache.
         """
-        scope = scope or {}
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else self.cache
+
+        scope = self.scope | _validate_scope(scope)
+
+        async def factory() -> AsyncInjectionContext:
+            return await self.sub(scope)
+
+        scope.add_factory(factory, AsyncInjectionContext, use_return_annotation=False)
+
         return await ainject(
-            {**self.scope, **scope, "__fundi_injection_context__": await self.sub()},
+            scope,
             info,
             self.stack,
             cache,
@@ -218,7 +237,7 @@ class AsyncInjectionContext:
 
     async def sub(
         self,
-        scope: Mapping[str, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | Scope | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "AsyncInjectionContext":
@@ -237,7 +256,7 @@ class AsyncInjectionContext:
 
     def copy(
         self,
-        scope: Mapping[str, typing.Any] | None = None,
+        scope: Mapping[str, typing.Any] | Scope | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "AsyncInjectionContext":
@@ -251,11 +270,11 @@ class AsyncInjectionContext:
 
         If ``no_cache`` is ``True`` then - cache is not copied.
         """
-        scope = scope or {}
+        scope = _validate_scope(scope)
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else {**self.cache}
 
-        return AsyncInjectionContext({**self.scope, **scope}, cache, {**self.override, **override})
+        return AsyncInjectionContext(self.scope | scope, cache, {**self.override, **override})
 
     async def close(self) -> None:
         """

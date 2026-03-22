@@ -1,17 +1,18 @@
-from fundi import scan, from_, AsyncInjectionContext
+from fundi import scan, from_, AsyncInjectionContext, Scope
 
 
 async def test_async_scope_sharing():
     async with AsyncInjectionContext({"scope_value": 1}) as ctx:
         injections = 0
 
-        async def dep(scope_value: int):
+        async def dep(scope_value: int) -> str:
             nonlocal injections
             injections += 1
 
             assert scope_value == 1
+            return ""
 
-        await ctx.inject(scan(dep))
+        await ctx.inject(scan(dep), Scope())
         await ctx.inject(scan(dep))
 
         assert injections == 2
