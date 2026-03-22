@@ -1,8 +1,8 @@
 import typing
 from typing import Any
+from types import TracebackType
 from typing_extensions import Self, overload
-from types import TracebackType, CoroutineType
-from collections.abc import Mapping, MutableMapping, Generator, AsyncGenerator, Awaitable
+from collections.abc import Mapping, MutableMapping, Generator, AsyncGenerator, Coroutine
 
 from .scope import Scope
 from .types import CacheKey, CallableInfo
@@ -14,7 +14,7 @@ from contextlib import (
     AbstractAsyncContextManager,
 )
 
-R = typing.TypeVar("R")
+R = typing.TypeVar("R", covariant=True)
 
 class InjectionContext:
     scope: Scope
@@ -40,6 +40,7 @@ class InjectionContext:
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "InjectionContext": ...
+    def __repr__(self) -> str: ...
     def close(self) -> None: ...
     def __enter__(self) -> Self: ...
     def __exit__(
@@ -104,6 +105,7 @@ class AsyncInjectionContext:
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> "AsyncInjectionContext": ...
+    def __repr__(self) -> str: ...
     async def close(self) -> None: ...
     async def __aenter__(self) -> Self: ...
     async def __aexit__(
@@ -131,14 +133,6 @@ class AsyncInjectionContext:
     @overload
     async def inject(
         self,
-        info: CallableInfo[Awaitable[R]],
-        scope: Mapping[str, typing.Any] | Scope | None = None,
-        override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
-        no_cache: bool = False,
-    ) -> R: ...
-    @overload
-    async def inject(
-        self,
         info: CallableInfo[AbstractAsyncContextManager[R]],
         scope: Mapping[str, typing.Any] | Scope | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
@@ -155,7 +149,7 @@ class AsyncInjectionContext:
     @overload
     async def inject(
         self,
-        info: CallableInfo[CoroutineType[Any, Any, R]],
+        info: CallableInfo[Coroutine[Any, Any, R]],
         scope: Mapping[str, typing.Any] | Scope | None = None,
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
@@ -168,3 +162,10 @@ class AsyncInjectionContext:
         override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
         no_cache: bool = False,
     ) -> R: ...
+    async def inject(
+        self,
+        info: CallableInfo[typing.Any],
+        scope: Mapping[str, typing.Any] | Scope | None = None,
+        override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
+        no_cache: bool = False,
+    ): ...

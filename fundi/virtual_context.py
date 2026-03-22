@@ -148,7 +148,7 @@ class VirtualContextProvider(typing.Generic[T, P]):
 
         self.__wrapped__: typing.Callable[P, Generator[T, None, None]] = function
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs):
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> _VirtualContextManager[T]:
         logger.debug("Creating virtual context manager for %r", self.__wrapped__)
         return _VirtualContextManager(self.__wrapped__(*args, **kwargs), self.__wrapped__)
 
@@ -165,7 +165,7 @@ class AsyncVirtualContextProvider(typing.Generic[T, P]):
 
         self.__wrapped__: typing.Callable[P, AsyncGenerator[T]] = function
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs):
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> _VirtualAsyncContextManager[T]:
         logger.debug("Creating virtual context manager for %r", self.__wrapped__)
         return _VirtualAsyncContextManager(self.__wrapped__(*args, **kwargs), self.__wrapped__)
 

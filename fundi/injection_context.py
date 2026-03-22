@@ -92,8 +92,9 @@ class InjectionContext:
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else self.cache
 
-        scope = self.scope | _validate_scope(scope)
-        scope.add_factory(lambda: self.sub(scope), InjectionContext)
+        inject_scope = _validate_scope(scope)
+        scope = self.scope | inject_scope
+        scope.add_factory(lambda: self.sub(inject_scope), InjectionContext)
 
         return inject(
             scope,
@@ -144,6 +145,9 @@ class InjectionContext:
 
         return InjectionContext(self.scope | scope, cache, {**self.override, **override})
 
+    def __repr__(self) -> str:
+        return f"InjectionContext(scope={self.scope!r}, cache={self.cache!r}, override={self.override!r})"
+
     def close(self):
         """
         End lifecycle of this injection context
@@ -153,7 +157,7 @@ class InjectionContext:
     def __enter__(self) -> Self:
         """
         Start lifecycle of this injection context.
-        Does nothing, as ``AsyncExitStack.__aenter__`` is empty. (CPython 3.10-3.14)
+        Does nothing, as ``ExitStack.__enter__`` is empty. (CPython 3.10-3.14)
         """
         self.stack.__enter__()
         return self
@@ -176,7 +180,7 @@ class InjectionContext:
 
 class AsyncInjectionContext:
     """
-    Synchronous injection context.
+    Asynchronous injection context.
     Allows both synchronous and asynchronous dependencies of all kinds to be injected.
     """
 
@@ -220,10 +224,11 @@ class AsyncInjectionContext:
         override = override or {}
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else self.cache
 
-        scope = self.scope | _validate_scope(scope)
+        inject_scope = _validate_scope(scope)
+        scope = self.scope | inject_scope
 
         async def factory() -> AsyncInjectionContext:
-            return await self.sub(scope)
+            return await self.sub(inject_scope)
 
         scope.add_factory(factory, AsyncInjectionContext, use_return_annotation=False)
 
@@ -275,6 +280,9 @@ class AsyncInjectionContext:
         cache: MutableMapping[CacheKey, typing.Any] = {} if no_cache else {**self.cache}
 
         return AsyncInjectionContext(self.scope | scope, cache, {**self.override, **override})
+
+    def __repr__(self) -> str:
+        return f"AsyncInjectionContext(scope={self.scope!r}, cache={self.cache!r}, override={self.override!r})"
 
     async def close(self) -> None:
         """

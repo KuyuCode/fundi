@@ -1,6 +1,6 @@
 import typing
-from typing import overload
-from collections.abc import Generator, AsyncGenerator, Mapping, MutableMapping, Awaitable
+from typing import overload, Coroutine
+from collections.abc import Generator, AsyncGenerator, Mapping, MutableMapping
 
 from fundi.scope import Scope
 from fundi.types import CacheKey, CallableInfo
@@ -69,7 +69,7 @@ async def ainject(
 @overload
 async def ainject(
     scope: Mapping[str, typing.Any] | Scope,
-    info: CallableInfo[Awaitable[R]],
+    info: CallableInfo[Coroutine[typing.Any, typing.Any, R]],
     stack: AsyncExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,

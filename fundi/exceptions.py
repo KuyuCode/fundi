@@ -35,3 +35,10 @@ class InvalidInitialValue(ValueError):
         super().__init__(
             f"Initial value is invalid: got {value!r}, but ``TypeFactory`` or ``TypeInstance`` expected"
         )
+
+
+class CyclicDependencyError(ValueError):
+    def __init__(self, trace: tuple[CallableInfo[typing.Any], ...]):
+        path: str = " -> ".join(map(lambda ci: callable_str(ci.call), trace))
+        super().__init__(f"Cyclic dependency detected: {path}")
+        self.trace: tuple[CallableInfo[typing.Any], ...] = trace
