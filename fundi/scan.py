@@ -102,7 +102,7 @@ def scan(
 
     :param call: callable to get information from
     :param caching:  whether to use cached result of this callable or not
-    :param async_: Override "async\_" attribute value
+    :param async_: Override "async\\_" attribute value
     :param generator: Override "generator" attribute value
     :param context: Override "context" attribute value
     :param use_return_annotation: Whether to use call's return

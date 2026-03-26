@@ -22,7 +22,7 @@ def from_(
 
     :param dependency: function dependency
     :param caching: Whether to use cached result of this callable or not
-    :param async_: Override "async\_" attriubute value
+    :param async_: Override "async\\_" attriubute value
     :param generator: Override "generator" attriubute value
     :param context: Override "context" attriubute value
     :param use_return_annotation: Whether to use dependency's return
