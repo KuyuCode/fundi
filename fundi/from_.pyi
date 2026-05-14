@@ -1,6 +1,7 @@
 import typing
-from typing import overload
-from collections.abc import Generator, AsyncGenerator, Awaitable
+from types import CoroutineType
+from typing import overload, Coroutine, Any
+from collections.abc import Generator, AsyncGenerator
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
 
 T = typing.TypeVar("T", bound=type)
@@ -69,7 +70,16 @@ def from_(
 ) -> AsyncGenerator[Y, S]: ...
 @overload
 def from_(
-    dependency: typing.Callable[..., Awaitable[R]],
+    dependency: typing.Callable[..., Coroutine[Any, Any, R]],
+    caching: bool = True,
+    async_: bool | None = None,
+    generator: bool | None = None,
+    context: bool | None = None,
+    use_return_annotation: bool = True,
+) -> R: ...
+@overload
+def from_(
+    dependency: typing.Callable[..., CoroutineType[Any, Any, R]],
     caching: bool = True,
     async_: bool | None = None,
     generator: bool | None = None,

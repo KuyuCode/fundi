@@ -1,4 +1,5 @@
 import typing
+from types import CoroutineType
 from typing import overload, Coroutine
 from collections.abc import Generator, AsyncGenerator, Mapping, MutableMapping
 
@@ -70,6 +71,14 @@ async def ainject(
 async def ainject(
     scope: Mapping[str, typing.Any] | Scope,
     info: CallableInfo[Coroutine[typing.Any, typing.Any, R]],
+    stack: AsyncExitStack | None = None,
+    cache: MutableMapping[CacheKey, typing.Any] | None = None,
+    override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
+) -> R: ...
+@overload
+async def ainject(
+    scope: Mapping[str, typing.Any] | Scope,
+    info: CallableInfo[CoroutineType[typing.Any, typing.Any, R]],
     stack: AsyncExitStack | None = None,
     cache: MutableMapping[CacheKey, typing.Any] | None = None,
     override: Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
