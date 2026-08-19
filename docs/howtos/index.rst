@@ -42,6 +42,7 @@ Deep dive to each component
     dependant
     scope
     injection
+    injection-context
     side-effects
     hooks
     overriding

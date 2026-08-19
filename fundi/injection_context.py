@@ -227,10 +227,12 @@ class AsyncInjectionContext:
         inject_scope = _validate_scope(scope)
         scope = self.scope | inject_scope
 
-        async def factory() -> AsyncInjectionContext:
-            return await self.sub(inject_scope)
-
-        scope.add_factory(factory, AsyncInjectionContext, use_return_annotation=False)
+        scope.add_factory(
+            lambda: self.sub(inject_scope),
+            AsyncInjectionContext,
+            use_return_annotation=False,
+            async_=True,  # make FunDI believe it is async function
+        )
 
         return await ainject(
             scope,
