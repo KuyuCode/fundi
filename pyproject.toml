@@ -54,5 +54,4 @@ respect-ignore-files = false
 line-length = 100
 
 [tool.ruff.lint.isort]
-# It sorts by module name length, not the line length, and thats horrible
 length-sort = true

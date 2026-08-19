@@ -5,6 +5,7 @@ import collections.abc
 from fundi.resolve import resolve
 from fundi.scope import Scope, Type
 from fundi.logging import get_logger
+from fundi.exceptions import CyclicDependencyError
 from fundi.types import CacheKey, CallableInfo, Parameter
 from fundi.util import call_sync, call_async, add_injection_trace, callable_str
 
@@ -53,9 +54,9 @@ def injection_impl(
 
             if not result.resolved:
                 dependency = result.dependency
-                assert (
-                    dependency is not None
-                ), "Dependency expected, got None. This is a bug, please report at https://github.com/KuyuCode/fundi"
+                assert dependency is not None, (
+                    "Dependency expected, got None. This is a bug, please report at https://github.com/KuyuCode/fundi"
+                )
 
                 collection_logger.debug("Passing %r upstream to be injected", dependency.call)
 
@@ -110,6 +111,7 @@ def inject(
     stack: contextlib.ExitStack | None = None,
     cache: collections.abc.MutableMapping[CacheKey, typing.Any] | None = None,
     override: collections.abc.Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
+    _trace: tuple[CallableInfo, ...] | None = None,
 ) -> typing.Any:
     """
     Synchronously inject dependencies into callable.
@@ -136,10 +138,12 @@ def inject(
     if stack is None:
         injection_logger.debug("Exit stack not provided, creating own")
         with contextlib.ExitStack() as stack:
-            return inject(scope, info, stack, cache, override)
+            return inject(scope, info, stack, cache, override, _trace)
 
     if cache is None:
         cache = {}
+
+    _trace = (*(_trace or ()), info)
 
     injection_logger.debug("Synchronously injecting %r", info.call)
 
@@ -152,8 +156,10 @@ def inject(
             inner_scope, inner_info, more = gen.send(value)
 
             if more:
+                if inner_info in _trace:
+                    raise CyclicDependencyError(_trace)
                 injection_logger.debug("Got %r from downstream: Injecting it", inner_info.call)
-                value = inject(inner_scope, inner_info, stack, cache, override)
+                value = inject(inner_scope, inner_info, stack, cache, override, _trace)
                 continue
 
             injection_logger.debug(
@@ -177,6 +183,7 @@ async def ainject(
     stack: contextlib.AsyncExitStack | None = None,
     cache: collections.abc.MutableMapping[CacheKey, typing.Any] | None = None,
     override: collections.abc.Mapping[typing.Callable[..., typing.Any], typing.Any] | None = None,
+    _trace: tuple[CallableInfo[typing.Any], ...] | None = None,
 ) -> typing.Any:
     """
     Asynchronously inject dependencies into callable.
@@ -196,10 +203,12 @@ async def ainject(
     if stack is None:
         injection_logger.debug("Exit stack not provided, creating own")
         async with contextlib.AsyncExitStack() as stack:
-            return await ainject(scope, info, stack, cache, override)
+            return await ainject(scope, info, stack, cache, override, _trace)
 
     if cache is None:
         cache = {}
+
+    _trace = (*(_trace or ()), info)
 
     injection_logger.debug("Asynchronously injecting %r", info.call)
 
@@ -212,8 +221,10 @@ async def ainject(
             inner_scope, inner_info, more = gen.send(value)
 
             if more:
+                if inner_info.key in _trace:
+                    raise CyclicDependencyError(_trace)
                 injection_logger.debug("Got %r from downstream: Injecting it", inner_info.call)
-                value = await ainject(inner_scope, inner_info, stack, cache, override)
+                value = await ainject(inner_scope, inner_info, stack, cache, override, _trace)
                 continue
 
             injection_logger.debug(

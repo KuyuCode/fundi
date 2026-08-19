@@ -20,7 +20,7 @@ __all__ = [
     "DependencyConfiguration",
 ]
 
-R = typing.TypeVar("R")
+R = typing.TypeVar("R", covariant=True)
 
 
 @dataclass
